@@ -29,7 +29,7 @@ git clone https://github.com/valaly/RedFoxQT <-- this will make a copy in C:\Use
 git clone https://github.com/valaly/RedFoxQT /path/to/new/folder <-- this will make a copy in the empty folder  
 
 
-
+# Links
 
 Perhaps useful links for beginning to use Github:
 
