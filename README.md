@@ -1,4 +1,4 @@
-# RedFoxQT
+# RedFoxQT - Strategy & Backtesting Improvement
 
 # How to access Github from your computer – instead of via a browser?
 Download Git: https://git-scm.com/downloads  
