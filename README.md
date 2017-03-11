@@ -5,8 +5,8 @@ Download Git: https://git-scm.com/downloads
 Download Github for Windows/Mac: https://desktop.github.com/  
 Configure GitBash:  
 -	Open Gitbash  
--	Write git config –global user.name “[firstname lastname]”  
--	Write git config –global user.email “[valid-email]”  
+-	Write git config --global user.name “[firstname lastname]”  
+-	Write git config --global user.email “[valid-email]”  
 
 # What is a repository?  
 A repository is usually used to organize a single project. Repositories can contain folders and files, images, videos, spreadsheets, and data sets – anything your project needs.   
