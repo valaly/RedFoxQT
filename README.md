@@ -21,9 +21,7 @@ When you create a branch off the master branch, you’re making a copy, or snaps
 
 
 # How to create a branch?  
-In Gitbash:  
-
-Git branch  
+See tutorial in Github For Windows/Mac.  
 
 # How to clone a repo?  
 In GitBash:  
