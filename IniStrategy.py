@@ -26,7 +26,7 @@ DBC_EMA = indicator('EMA')
 DBC_EMA.calc(DBC,timeValue=50)
 DBC_EMA.plotInd()
 
-
+sjaak
 #
 ##DBC_BB = indicator('BBANDS')
 ##DBC_BB.calc(DBC,timeValue=2, maType=2)
