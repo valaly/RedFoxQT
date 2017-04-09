@@ -8,38 +8,37 @@ Created on Sat Mar 11 15:32:50 2017
 
 # Initialise Strategy Class
 from StrategyClass import Strategy
-from StrategyClass import indicator
 
-# Call functions/class      
+
+## STRATEGY STEP 1: Which stocks? ---------------------------------------------
+
+# Initialising Stock(s), loading price data
 DBC = Strategy('DBC')
 DBC.readData()
-DBC.plotStock('openPrice')
-
-ABC = 
 
 
-DBC_SMA = DBC.indicator('SMA')
-DBC_SMA.calc(timeValue=100)
-DBC_SMA.plotInd()
-#
-DBC_EMA = indicator('EMA')
-DBC_EMA.calc(DBC,timeValue=50)
-DBC_EMA.plotInd()
 
-sjaak
-#
-##DBC_BB = indicator('BBANDS')
-##DBC_BB.calc(DBC,timeValue=2, maType=2)
-##DBC_BB.plotInd(label='probeer')
-#
-#probeersel = buySell('DBC_SMA_EMA_Cross')
-#t1, y1 = probeersel.goldenCross(DBC_SMA, DBC_EMA)
-#t2, y2 = probeersel.isSlope(DBC,0,0.05)
-#probeersel.plotTY(t1,y1)
-#probeersel.plotTY(t2,y2)
-#T = probeersel.commonTY(t1,t2)
-#probeersel.plotBuySell(T)
-#
-#
-#
-#
+## STRATEGY STEP 2: Which strategy? -------------------------------------------
+# First order indicator
+b = DBC.FirstOrderIndicator('SMA',TimeValue=10,PriceType='LowPrice')
+
+# Second order indicator
+c = DBC.SecondOrderIndicator(b,'SMA',TimeValue=100)
+
+
+# Single buy or Sell Criteria
+d = DBC.GoldenCross(b,c)
+e = DBC.IsSlope(b['Result'],0.15,0.2)
+
+
+# Multiple buy or Sell Criteria
+f = DBC.CommonTY(d,e,'Sell')
+
+
+## STRATEGY STEP 3: Plot! 
+DBC.plotStock('OpenPrice')
+DBC.PlotIndicator(b)
+DBC.PlotIndicator(c)
+DBC.plotTY(d)
+DBC.plotTY(e)
+DBC.PlotBuySell(f)

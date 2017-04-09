@@ -26,7 +26,9 @@ class Strategy(object):
     def __init__(self,name):
         self.name = name
         self.description = "description??"
-
+        
+        
+## Reading Data --------------------------------------------- 
     def readData(self):
     
         #READ  data  
@@ -48,18 +50,199 @@ class Strategy(object):
         self.high_price = AllData['high_price']
 
  
+    
+
+## Strategy Components  ----------------------------------------------   
+    def FirstOrderIndicator(self,vs_IndicatorName, **kwargs):
+        
+        # initiate
+        dic_Output={"VariableType":'FirstOrderIndicator',"StockName":self.name, "IndicatorName":vs_IndicatorName, "IndicatorOrder":'First'}
+        argumentName=[]
+        argumentValue=[]
+        
+        # loop through **kwargs
+        for key, value in kwargs.iteritems():
+            argumentName.append(key)
+            argumentValue.append(value)
+                        
+        
+        
+        
+        # Read and assign all input arguments            
+        if 'PriceType' in argumentName:
+            vs_PriceType = argumentValue[argumentName.index('PriceType')]
+            dic_Output.update({"PriceType":vs_PriceType})
+        else:
+            vs_PriceType = 'OpenPrice'
+            
+        if vs_PriceType == 'OpenPrice':
+            ld_UsedPrice = self.open_price
+        elif vs_PriceType == 'ClosePrice':
+            ld_UsedPrice = self.close_price
+        elif vs_PriceType == 'LowPrice':
+            ld_UsedPrice = self.low_price
+        elif vs_PriceType == 'HighPrice':
+            ld_UsedPrice = self.high_price
+
+            
+
+        if 'TimeValue' in argumentName:
+            vi_TimeValue = argumentValue[argumentName.index('TimeValue')]
+            dic_Output.update({"TimeValue":vi_TimeValue})
+        
+
+
+# check which indicator is to be calculated
+            #   Implemented so far
+            #   'Name' | 'Arguments'
+            #   SMA - Simple Moving Average | timeValue
+            #   EMA - Exponential Moving Average | timeValue
+            #
+            
+          
+        
+        # Check Indicator Type and Calculate Result        
+        if vs_IndicatorName == 'SMA':
+            result = talib.SMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
+        elif vs_IndicatorName == 'EMA':
+            result = talib.EMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
+        
+        dic_Output.update({"Result" :result})
+
+        # Pass datetime object to output
+        dic_Output.update({"dt_object":self.dt_object})
+
+        
+        return dic_Output
+#
+    
+    def SecondOrderIndicator(self,dic_Indicator,vs_IndicatorName, **kwargs):
+         # initiate
+        dic_Output={"VariableType":'SecondOrderIndicator',"StockName":self.name, "IndicatorName":vs_IndicatorName, "IndicatorOrder":'Second'}
+        argumentName=[]
+        argumentValue=[]
+        
+        # loop through **kwargs
+        for key, value in kwargs.iteritems():
+            argumentName.append(key)
+            argumentValue.append(value)
+            
+        
+
+    
+        if 'TimeValue' in argumentName:
+            vi_TimeValue = argumentValue[argumentName.index('TimeValue')]
+            dic_Output.update({"TimeValue":vi_TimeValue})
+    
+        # Check Indicator Type and Calculate Result        
+        if vs_IndicatorName == 'SMA':
+            result = talib.SMA(np.array(dic_Indicator['Result']),timeperiod = vi_TimeValue)
+        elif vs_IndicatorName == 'EMA':
+            result = talib.EMA(np.array(dic_Indicator['Result']),timeperiod = vi_TimeValue)
+        
+        
+        dic_Output.update({"Result":result})
+
+        # Pass datetime object to output
+        dic_Output.update({"dt_object":self.dt_object})
+    
+
+        return dic_Output   
+    
+
+
+
+
+    def GoldenCross(self, dic_Indicator1,dic_Indicator2):
+        dic_Output ={"VariableType":'SingleBuyOrSellCriteria',"Indicator1":dic_Indicator1,"Indicator2":dic_Indicator2,"BuySellCriteria":'GoldenCross'}
+        
+        
+        # initiation
+        x = []
+        t = []
+        y = []
+        
+        diff = []
+        diff = np.append(diff,1000)
+
+        for i in range(1,len(dic_Indicator1['Result'])):
+            diff = np.append(diff,dic_Indicator2['Result'][i]-dic_Indicator1['Result'][i])
+            if diff[i]*diff[i-1] < 0: # change of sign (-/+)
+                x = np.append(x,i)
+                t = np.append(t,dic_Indicator1['dt_object'][i])
+                y = np.append(y,dic_Indicator1['Result'][i])
+        
+        dic_Output.update({"y":y,"t":t})
+        return dic_Output
+
+
+    def determineSlope(self,YValues):
+        
+        slope=[0] * len(YValues)              
+        for i in range(1,len(YValues)):
+             slope[i] = (YValues[i]-YValues[i-1])
+             
+        # assign to class object & output function
+        #self.slope = slope
+        return slope
+
+
+    def IsSlope(self,YValues,vdValue1,vdValue2):
+        dic_Output ={"VariableType":'SingleBuyOrSellCriteria',"LowerThreshold":vdValue1,"UpperThreshold":vdValue2,"BuySellCriteria":'IsSlope'}
+#        
+
+        # determine slope
+        slope = self.determineSlope(YValues)
+        
+        # determine which value is higher: For robustness
+        if vdValue1 >= vdValue2:
+            lowLimit = vdValue2
+            upLimit = vdValue1
+        else:
+            lowLimit = vdValue1
+            upLimit = vdValue2   
+        
+        # allocate space        
+        x=[]
+        t=[]
+        y=[]
+        
+        for i in range(1,len(YValues)):
+            if slope[i] > lowLimit:
+                if slope[i] < upLimit:
+                    x = np.append(x,i)
+                    t = np.append(t,self.dt_object[i])
+                    y = np.append(y,YValues[i])
+        dic_Output.update({"y":y,"t":t})
+        return dic_Output
+
+    def CommonTY(self,dic_DataIn1, dic_DataIn2,args_Action):
+        dic_Output ={"VariableType":'MultipleBuyOrSellCriteria',"Action":args_Action,"BuySellCriteria1":dic_DataIn1['BuySellCriteria'],"BuySellCriteria2":dic_DataIn2['BuySellCriteria']}
+        
+        # find common time values
+        t = list(set(dic_DataIn1['t']).intersection(dic_DataIn2['t']))
+        
+        dic_Output.update({"t":t})
+        return dic_Output
+
+    
+
+
+    
+
+## Plotters ---------------------------------------------
     def plotStock(self, whichPrice):
         
         # choose between open/cloe/high/low and plot datetime object and values. DIT KAN CHIQUER
-        if whichPrice == 'openPrice':
+        if whichPrice == 'OpenPrice':
             plot = plt.plot(self.dt_object, self.open_price)
-        elif whichPrice == 'closePrice':
+        elif whichPrice == 'ClosePrice':
             plot = plt.plot(self.dt_object, self.close_price)
-        elif whichPrice == 'lowPrice':
+        elif whichPrice == 'LowPrice':
             plot = plt.plot(self.dt_object, self.low_price)
-        elif whichPrice == 'maxPrice':
+        elif whichPrice == 'HighPrice':
             plot = plt.plot(self.dt_object, self.high_price)
-        elif whichPrice == 'candleStick':
+        elif whichPrice == 'CandleStick':
             plot, ax = plt.subplots()
             fnc.candlestick2_ochl(ax, self.open_price, self.close_price, self.high_price, self.low_price, width=0.5, colorup='k', colordown='r', alpha=0.75)
             
@@ -92,82 +275,8 @@ class Strategy(object):
         # show plot
         plt.show()
 
-'''
------------- SubClass 'indicator' ----------
-'''
 
-class indicator(Strategy): 
-    def __init__(self, indicatorName):
-        #Strategy.__init__(self, indicatorName)
-        self.indicatorName = indicatorName
-        
-    
-    def calc(self, **kwargs):
-        # initiate
-        argumentName=[]
-        argumentValue=[]
-        
-         # transfer of values from stock class ---->> Not a nice solution. I am sure Val knows a better solution ;-)
-#        self.stockName = stock.name
-#        self.dt_object = stock.dt_object
-        
-        # loop through **kwargs
-        for key, value in kwargs.iteritems():
-            argumentName.append(key)
-            argumentValue.append(value)
-                        
-        # check which indicator is to be calculated
-            #   Implemented so far
-            #   'Name' | 'Arguments'
-            #   SMA - Simple Moving Average | timeValue
-            #   EMA - Exponential Moving Average | timeValue
-            #
-            
-        # define errors
-        errorTooManyArguments = ['Too many input arguments for'+self.indicatorName]
-        unknownArgument =['Unknown argument type or number for indicator type' + self.indicatorName]
-        
-        
-        if self.indicatorName == 'SMA':
-            if 'timeValue' in argumentName:
-                
-                # check umber of arguments equals 1
-                if len(argumentName) == 1:
-                    # argumentValue[0] not allowed to be 1 (or <1 or??)
-                    self.argumentValue = argumentValue[0]
-                    
-                    # calculate results using talib
-                    self.result = talib.SMA(np.array(stock.open_price),timeperiod = argumentValue[0])
-                elif len(argumentName) == 0:
-                    print 'For indicator type "SMA" is 1 argument required: timeValue'
-                else:
-                    print errorTooManyArguments
-            else:
-                print unknownArgument
-                print 'Syntax: calc("SMA", timeValue="value")'
-        # ------------------------------------------------------------------ #
-        elif self.indicatorName == 'EMA':
-                      
-            # check arguments
-            if 'timeValue' in argumentName:
-                
-                # check umber of arguments equals 1
-                if len(argumentName) == 1:
-                    # argumentValue[0] not allowed to be 1 (or <1 or??)
-                    self.argumentValue = argumentValue[0]
-                                        
-                    # calculate results using talib
-                    self.result = talib.EMA(np.array(stock.open_price),timeperiod = argumentValue[0])
-                elif len(argumentName) == 0:
-                    print 'For indicator type "EMA" is 1 argument required: timeValue'
-                else:
-                    print errorTooManyArguments
-            else:
-                print unknownArgument
-                print 'Syntax: calc("EMA", timeValue="value")'
-    
-    
-    def plotInd(self,**kwargs):
+    def PlotIndicator(self,dic_Indicator,**kwargs):
         # initiate
         argumentName=[]
         argumentValue=[]
@@ -182,13 +291,46 @@ class indicator(Strategy):
         ### iets verzinnen dat ook 2 of 3 lijnen in 1 keer geplot kunnen worden omdat BBANDS meer dan 1 resultaat
             
         # plot
-        plot = plt.plot(self.dt_object,self.result)
+        plot = plt.plot(dic_Indicator['dt_object'],dic_Indicator['Result'])
         
         # set label
         if 'label' in argumentName:
             print str(argumentName.index('label'))
             plt.setp(plot,label=argumentValue[argumentName.index('label')])
         else:
-            plt.setp(plot, label=self.stockName + ' ' + self.indicatorName + ' ' + str(self.argumentValue))
+            plt.setp(plot, label=dic_Indicator['StockName'] + ' ' + dic_Indicator['IndicatorName'] + ' ' + dic_Indicator['IndicatorOrder'] + ' ' + str(dic_Indicator['TimeValue']))
         
         plt.legend(loc="upper left", bbox_to_anchor=[0, 1], ncol=2, shadow=True, title="Legend", fancybox=True)
+
+    def plotTY(self,dic_DataIn):
+        # plotting
+        plt.plot(dic_DataIn['t'] ,dic_DataIn['y'], 'o', label=self.name + ' ' + dic_DataIn['BuySellCriteria'])
+        plt.grid(True)
+        plt.ylabel('Price')
+        plt.xlabel('Time')
+        plt.legend()
+
+    def PlotBuySell(self,dic_DataIn):
+        for i in range(len(dic_DataIn['t'])):
+            plt.axvline(dic_DataIn['t'][i], ymin=0, ymax = 1, linewidth=2, linestyle='dashed',color='k', label=dic_DataIn['Action'])
+            if i == 0:
+                plt.legend()# only one time creating legend item
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
