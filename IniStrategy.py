@@ -21,7 +21,7 @@ DBC.readData()
 ## STRATEGY STEP 2: Which strategy? -------------------------------------------
 # First order indicator
 b = DBC.FirstOrderIndicator('SMA',TimeValue=10,PriceType='LowPrice')
-
+bb = DBC.FirstOrderIndicator('Volatility',TimeValue=10,PriceType='LowPrice')
 # Second order indicator
 c = DBC.SecondOrderIndicator(b,'SMA',TimeValue=100)
 
@@ -42,3 +42,5 @@ DBC.PlotIndicator(c)
 DBC.plotTY(d)
 DBC.plotTY(e)
 DBC.PlotBuySell(f)
+
+#DBC.MainPlot(b)

@@ -106,14 +106,6 @@ class Strategy(object):
             result = talib.SMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
         elif vs_IndicatorName == 'EMA':
             result = talib.EMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
-        elif vs_IndicatorName == 'ReturnPerformance':
-            #The monthly performance is calculated as follows: natural logarithm of (price/price_1_month_earlier + 1).
-            result = np.log(np.array(ld_UsedPrice)/np.array(ld_UsedPrice-vi_TimeValue)+1)
-        elif vs_IndicatorName == 'Volatility':
-            result=[]
-            for i in range(len(np.array(ld_UsedPrice))):
-                result.append(i) = np.std(np.array(ld_UsedPrice[i-21:i]))*np.sqrt(252)
-        
         
         dic_Output.update({"Result" :result})
 
@@ -233,34 +225,30 @@ class Strategy(object):
         dic_Output.update({"t":t})
         return dic_Output
 
-### Required for Strategy 3
-#'''The strategy evaluates each security in the basket by weighing the 1-month, 3-month, and 6-month return performance and the 6-month volatility performance. 
-#Based on that, the current position is revised once a month with the possibility to sell the current position and buy a different security. Every week the position is evaluated to determine if it should be terminated, but not with the possibility to buy a different security.'''
-#'''    
-#return performance 
-#volatility performance
-#
-#'''
+    
+
+
+    
 
 ## Plotters ---------------------------------------------
-#    def MainPlot(self, arg_Data,**kwargs):
-#        # initiate
-#        argumentName=[]
-#        argumentValue=[]
-#        
-#        # Read **kwargs
-#        # loop through **kwargs
-#        for key, value in kwargs.iteritems():
-#            argumentName.append(key)
-#            argumentValue.append(value)
-#            
-#        if 'VariableType' in argumentName:
-#            if argumentValue[0]['VariableType']=='MultipleBuyOrSellCriteria':
-#                print 'MultipleBuyOrSellCriteria'
-#            else:
-#                print 'niets'
-#        else:
-#            print "VariableType is unclear"
+    def MainPlot(self, **kwargs):
+        # initiate
+        argumentName=[]
+        argumentValue=[]
+
+        # Read **kwargs
+        # loop through **kwargs
+        for key, value in kwargs.iteritems():
+            argumentName.append(key)
+            argumentValue.append(value)
+            
+        if 'VariableType' in argumentName:
+            if argumentValue[0]['VariableType']=='MultipleBuyOrSellCriteria':
+                print 'MultipleBuyOrSellCriteria'
+            else:
+                print 'niets'
+        else:
+            print "VariableType is unclear"
             
             
             
