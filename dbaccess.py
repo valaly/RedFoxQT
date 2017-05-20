@@ -42,8 +42,8 @@ class DatabaseManipulation(object):
             db_entry = self.fileInfo.loc[self.fileInfo[col_name] == csv_name]
             index = db_entry.index.values[0]
             print 'Current path: ', os.getcwd()
-            db_path = os.path.join(db_entry.path[index], db_entry.name[index])
-            #db_path = ''.join(['../', db_entry.path[index], '/', db_entry.name[index]])
+            #db_path = os.path.join(db_entry.path[index], db_entry.name[index])
+            db_path = ''.join(['../', db_entry.path[index], '/', db_entry.name[index]])
             db_info = pd.read_csv(db_path)
             dic = {'name': db_entry.name[index],
                    'path': db_entry.path[index],
@@ -65,7 +65,7 @@ class DatabaseManipulation(object):
 class DatabaseManipulationSM(DatabaseManipulation):
     def __init__(self):
         name = 'Securities Master Database'
-        file_csv = 'dbSM_fileInfo.csv'
+        file_csv = '../dbSM_fileInfo.csv'
         DatabaseManipulation.__init__(self, name, file_csv)
 
     def get_website_url(self, vendor_id, ticker):
