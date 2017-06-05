@@ -39,7 +39,7 @@ class Strategy(object):
         path = r"/Users/emiel/Dropbox/MySharedDocuments/04_RedFox/02_PythonFiles/SM_Database/daily_price"
         os.chdir(path)
         with open('daily_price_'+self.name+'.csv', 'rb') as csvfile:
-            self.StockData = pd.read_csv(csvfile)   
+            self.StockData = pd.read_csv(csvfile)          
 #            self.StockData['DateTime'] = pd.to_datetime(self.StockData['price_date'].values).date
             
             self.StockData['DateTime'] = [dt.strptime(x, '%Y-%m-%d') for x in self.StockData['price_date']]
@@ -366,7 +366,7 @@ class Strategy(object):
 
 
 ## Random functions --> New file voor aanmaken?
-    def f_ToMonthly(self, dt_InputDate, time='monthly'): # very slow function
+    def f_CalcReturn(self, dt_InputDate, nad_Price, time='monthly'): # very slow function
         # make first element the input date
         DateDeltaMonth=[]
         DateDeltaMonth.append(dt_InputDate)
@@ -383,37 +383,21 @@ class Strategy(object):
         
         
         ## Calculate the Returns
-        self.StockDataMonthly = pd.DataFrame({'DateTime':DateDeltaMonth})
+        self.Returns = pd.DataFrame({'DateDeltaMonth':DateDeltaMonth})
 
         # find pricedate by data lists
-        self.StockDataMonthly['open_price'] = self.StockData['open_price'].loc[self.StockData['DateTime'].isin(self.StockDataMonthly['DateTime'].values)].values
-       
-        # calculate annual volatility
-        self.StockData['AnnualVolatility'] = self.FirstOrderIndicator('Volatility')['Result']
-        self.StockDataMonthly['AnnualVolatility'] = self.StockData['AnnualVolatility'].loc[self.StockData['DateTime'].isin(self.StockDataMonthly['DateTime'].values)].values
+        self.Returns['PriceMonth'] = self.StockData['open_price'].loc[self.StockData['DateTime'].isin(self.Returns['DateDeltaMonth'].values)].values
+        
         
         # Shift one element to get the one month shifted dates
-        self.StockDataMonthly['DateTimeMonthShifted'] =  self.StockDataMonthly['DateTime'].shift(-1)
-        self.StockDataMonthly['open_price_MonthShifted'] = self.StockDataMonthly['open_price'].shift(-1)
+        self.Returns['DateDeltaMonthShifted'] =  self.Returns['DateDeltaMonth'].shift(-1)
+        self.Returns['PriceMonthShifted'] = self.Returns['PriceMonth'].shift(-1)
         
-        
-        
-        return []
-    
-    
-    def f_CalcPerformance(self, dt_InputDate, argd_PortfolioAverage):
-        self.f_ToMonthly( dt_InputDate)
-        # calculate monthly performance
-        self.StockDataMonthly['MonthlyPerformance'] = np.log(self.StockDataMonthly['open_price']/self.StockDataMonthly['open_price_MonthShifted'] + 1)
-        
-        # calculate one/three/six month performance
-        self.StockDataMonthly['OneMonthPerformance']    = self.StockDataMonthly['MonthlyPerformance']*argd_PortfolioAverage/self.StockDataMonthly['AnnualVolatility']
-        self.StockDataMonthly['ThreeMonthPerformance']  = talib.SMA(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=3)
-        self.StockDataMonthly['SixMonthPerformance']    = talib.SMA(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=6)
-        # Deze kloppen niet
+        # Calculate Performance
         
         
         return []
+
     
     def f_SubtractMonths(self,sourcedate,months):
         month = sourcedate.month - months - 1
@@ -447,12 +431,8 @@ class Strategy(object):
                 break
         return delta
 
-    def f_CutDates(self, start_date, end_date):
-        if (start_date == 'default') or (start_date < self.StockData['price_date'].iloc[0]):
-            start_date = self.StockData['price_date'].iloc[0]
-        if (end_date == 'default') or (end_date > self.StockData['price_date'].iloc[-1]):
-            end_date = self.StockData['price_date'].iloc[-1]
-    
-        self.StockData = self.StockData.loc[(self.StockData['price_date'] >= start_date) & (self.StockData['price_date'] <= end_date)].copy()
-    
-    
+
+
+
+
+

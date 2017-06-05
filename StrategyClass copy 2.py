@@ -366,7 +366,7 @@ class Strategy(object):
 
 
 ## Random functions --> New file voor aanmaken?
-    def f_ToMonthly(self, dt_InputDate, time='monthly'): # very slow function
+    def f_CalcReturn(self, dt_InputDate, time='monthly'): # very slow function
         # make first element the input date
         DateDeltaMonth=[]
         DateDeltaMonth.append(dt_InputDate)
@@ -383,34 +383,26 @@ class Strategy(object):
         
         
         ## Calculate the Returns
-        self.StockDataMonthly = pd.DataFrame({'DateTime':DateDeltaMonth})
+        self.Returns = pd.DataFrame({'DateDeltaMonth':DateDeltaMonth})
 
         # find pricedate by data lists
-        self.StockDataMonthly['open_price'] = self.StockData['open_price'].loc[self.StockData['DateTime'].isin(self.StockDataMonthly['DateTime'].values)].values
-       
-        # calculate annual volatility
-        self.StockData['AnnualVolatility'] = self.FirstOrderIndicator('Volatility')['Result']
-        self.StockDataMonthly['AnnualVolatility'] = self.StockData['AnnualVolatility'].loc[self.StockData['DateTime'].isin(self.StockDataMonthly['DateTime'].values)].values
+        self.Returns['PriceMonth'] = self.StockData['open_price'].loc[self.StockData['DateTime'].isin(self.Returns['DateDeltaMonth'].values)].values
+        
         
         # Shift one element to get the one month shifted dates
-        self.StockDataMonthly['DateTimeMonthShifted'] =  self.StockDataMonthly['DateTime'].shift(-1)
-        self.StockDataMonthly['open_price_MonthShifted'] = self.StockDataMonthly['open_price'].shift(-1)
+        self.Returns['DateDeltaMonthShifted'] =  self.Returns['DateDeltaMonth'].shift(-1)
+        self.Returns['PriceMonthShifted'] = self.Returns['PriceMonth'].shift(-1)
         
         
         
         return []
-    
-    
     def f_CalcPerformance(self, dt_InputDate, argd_PortfolioAverage):
-        self.f_ToMonthly( dt_InputDate)
+        self.f_CalcReturn( dt_InputDate)
         # calculate monthly performance
-        self.StockDataMonthly['MonthlyPerformance'] = np.log(self.StockDataMonthly['open_price']/self.StockDataMonthly['open_price_MonthShifted'] + 1)
+        self.Performance = pd.DataFrame({"MonthlyPerformance":np.log(self.Returns['PriceMonth']/self.Returns['PriceMonthShifted'] + 1)})
+        self.Performance = self.Performance['MonthlyPerformace']*argd_PortfolioAverage
         
-        # calculate one/three/six month performance
-        self.StockDataMonthly['OneMonthPerformance']    = self.StockDataMonthly['MonthlyPerformance']*argd_PortfolioAverage/self.StockDataMonthly['AnnualVolatility']
-        self.StockDataMonthly['ThreeMonthPerformance']  = talib.SMA(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=3)
-        self.StockDataMonthly['SixMonthPerformance']    = talib.SMA(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=6)
-        # Deze kloppen niet
+        
         
         
         return []
