@@ -41,8 +41,6 @@ class DatabaseManipulation(object):
         else:
             db_entry = self.fileInfo.loc[self.fileInfo[col_name] == csv_name]
             index = db_entry.index.values[0]
-            print 'Current path: ', os.getcwd()
-            #db_path = os.path.join(db_entry.path[index], db_entry.name[index])
             db_path = ''.join(['../', db_entry.path[index], '/', db_entry.name[index]])
             db_info = pd.read_csv(db_path)
             dic = {'name': db_entry.name[index],
