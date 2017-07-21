@@ -34,7 +34,7 @@ IAU.readData()
 ICF.readData()
 IWM.readData()
 
-# cut dates
+# cut dates --> automatiseren
 start_date  = '2008-01-01'
 end_date    = '2012-12-30'
 
@@ -62,13 +62,18 @@ portfolio_volatilities =    pd.DataFrame({'DBC':DBC.FirstOrderIndicator('Volatil
 portfolio_average = portfolio_volatilities.mean(axis=1)
 
 # Performance Indicator
-DBC.f_CalcPerformance(DBC.StockData['DateTime'].iloc[-1],portfolio_average)
-EFA.f_CalcPerformance(EFA.StockData['DateTime'].iloc[-1],portfolio_average)
-IAU.f_CalcPerformance(IAU.StockData['DateTime'].iloc[-1],portfolio_average)
-ICF.f_CalcPerformance(ICF.StockData['DateTime'].iloc[-1],portfolio_average)
-IWM.f_CalcPerformance(IWM.StockData['DateTime'].iloc[-1],portfolio_average)
+#DBC.f_CalcPerformance(DBC.StockData['DateTime'].iloc[-1],portfolio_average)
+#EFA.f_CalcPerformance(EFA.StockData['DateTime'].iloc[-1],portfolio_average)
+#IAU.f_CalcPerformance(IAU.StockData['DateTime'].iloc[-1],portfolio_average)
+#ICF.f_CalcPerformance(ICF.StockData['DateTime'].iloc[-1],portfolio_average)
+#IWM.f_CalcPerformance(IWM.StockData['DateTime'].iloc[-1],portfolio_average)
 
-
+# Performance Indicator
+portfolio_performance = pd.DataFrame({'DBC':DBC.f_CalcPerformance(DBC.StockData['DateTime'].iloc[-1],portfolio_average),
+                                      'EFA':EFA.f_CalcPerformance(EFA.StockData['DateTime'].iloc[-1],portfolio_average),
+                                      'IAU':IAU.f_CalcPerformance(IAU.StockData['DateTime'].iloc[-1],portfolio_average),
+                                      'ICF':ICF.f_CalcPerformance(ICF.StockData['DateTime'].iloc[-1],portfolio_average),
+                                      'IWM':IWM.f_CalcPerformance(IWM.StockData['DateTime'].iloc[-1],portfolio_average)})
 
 ## Single buy or Sell Criteria
 
