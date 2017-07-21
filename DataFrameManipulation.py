@@ -10,10 +10,13 @@ Documentation text to come
 
 import os
 import pandas as ClassPd
-from datetime import datetime as dt
+import numpy as ClassNp
+from datetime import datetime as Dt
+import datetime as ClassDt
 from calendar import monthrange
 from datetime import timedelta as timedelta
 import calendar
+
 
 def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix=""):
     """
@@ -36,45 +39,137 @@ def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix=""):
     df_Data['date_time'] = ClassPd.to_datetime(df_Data['price_date'].values).date
 
     return df_Data    
+
+
+def f_FindNearestDate(na_DateTime, vs_Date):
+    """
+        Description:        finds the date in a list closest the date provided
+        Input:
+            na_DateTime     numpy array or pandas series with datetime dates
+            vs_Date         string or datetime date of the date to compare l_DateTime to
+        Output:
+            dt_Min          datetime date of the date closest to vs_Date 
+            vi_MinInd       index of dt_Min in na_DateTime
+    """
+    
+    if not isinstance(na_DateTime, ClassNp.ndarray) and not isinstance(na_DateTime, ClassPd.Series):
+        raise TypeError("The date list must be a numpy array or a pandas series!")
+    
+    if isinstance(vs_Date, str):
+        dt_CompareDate = Dt.strptime(vs_Date, '%Y-%m-%d').date()
+    elif isinstance(vs_Date, ClassDt.date):
+        dt_CompareDate = vs_Date
+    else:
+        raise TypeError("The date to find must be a string or a datetime date!")
+    
+    dt_Min = min(na_DateTime, key=lambda x: abs(x - dt_CompareDate))
+    vi_MinInd = ClassNp.where(na_DateTime == dt_Min)
+    
+    return dt_Min, vi_MinInd
+
+
+def f_CutDates(df_Data, vs_StartDate='default', vs_EndDate='default'):
+    """
+        Description:        trims a dataframe to start at vs_StartDate and end at vs_EndDate
+        Input:
+            df_Data         pandas dataframe with a column 'price_date' with strings of dates
+            vs_StartDate    string of date at which data should start. If this is before the first date in the data, nothing will change.
+            vs_EndDate      string of date at which data should end. If this is after the last date in the data, nothing will change
+        Output:
+            df_Data         trimmed dataframe
+    """
+    
+    if (vs_StartDate == 'default') or (vs_StartDate < df_Data['price_date'].iloc[0]):
+        vs_StartDate = df_Data['price_date'].iloc[0]
+    if (vs_EndDate == 'default') or (vs_EndDate > df_Data['price_date'].iloc[-1]):
+        vs_EndDate = df_Data['price_date'].iloc[-1]
+
+    df_Data = df_Data.loc[(df_Data['price_date'] >= vs_StartDate) & (df_Data['price_date'] <= vs_EndDate)].copy()
+    return df_Data
+
+
+def f_FindCommonDates(l_Data):
+    """
+        Description:        finds the first and last date for which all dataframes in the list have data
+        Input:      
+            l_Data          (list of) dataframes with stock prices. The dataframes should contain at least
+                            'price_date': column with the dates in string format
+        Output:
+            vs_StartDate    string of first date present in all dataframes
+            vs_EndDate      string of last date present in all dataframes
+    """
+    
+    vs_StartDate = l_Data[0]['price_date'].iloc[0]
+    vs_EndDate = l_Data[0]['price_date'].iloc[-1]
+    
+    for df_Data in l_Data:
+        if vs_StartDate < df_Data['price_date'].iloc[0]:
+            vs_StartDate = df_Data['price_date'].iloc[0]
+        if vs_EndDate > df_Data['price_date'].iloc[-1]:
+            vs_EndDate = df_Data['price_date'].iloc[-1]
+            
+    return vs_StartDate, vs_EndDate
+    
+
+def f_CountTimePeriod(vs_Date1, vs_Date2, vs_Period):
+    """
+        Description:        counts the number of times a certain period has passed between two dates
+        Input:
+            vs_Date1        string or datetime date indicating the first day of the time period to consider
+            vs_Date2        string or datetime date indicating the last day of the time period to consider
+            vs_Period       the period to take into account. Currently possible:
+                                 - 'monthly'
+        Output:
+            vi_Delta        integer with the number of times the period has passed
+    """
+    
+    if isinstance(vs_Date1, str):
+        dt_CompareDate1 = Dt.strptime(vs_Date1, '%Y-%m-%d').date()
+    elif isinstance(vs_Date1, ClassDt.date):
+        dt_CompareDate1 = vs_Date1
+    else:
+        raise TypeError("The 1st date to find must be a string or a datetime date!")
         
-
- 
-def f_SubtractMonths(self,sourcedate,months):
-    month = sourcedate.month - months - 1
-    year = int(sourcedate.year + month / 12 )
-    month = month % 12 + 1
-    day = min(sourcedate.day,calendar.monthrange(year,month)[1])
+    if isinstance(vs_Date2, str):
+        dt_CompareDate2 = Dt.strptime(vs_Date2, '%Y-%m-%d').date()
+    elif isinstance(vs_Date2, ClassDt.date):
+        dt_CompareDate2 = vs_Date2
+    else:
+        raise TypeError("The 2nd date to find must be a string or a datetime date!")
     
-    # find nearest date
-    dt_OneMonthAgo = dt(year,month,day)
-    dt_OneMonthAgoCorrected = self.f_FindNearestDate(self.StockData['DateTime'],dt_OneMonthAgo)
+    vi_Delta = 0
+    if dt_CompareDate1 < dt_CompareDate2:
+        dt_D1 = dt_CompareDate1
+        dt_D2 = dt_CompareDate2
+    else:
+        dt_D1 = dt_CompareDate2
+        dt_D2 = dt_CompareDate1
     
+    if vs_Period.lower() in ['monthly', 'month']:
+        while True:
+            vi_DaysOfMonth = monthrange(dt_D1.year, dt_D1.month)[1]
+            dt_D1 += timedelta(days=vi_DaysOfMonth)
+            if dt_D1 <= dt_D2:
+                vi_Delta += 1
+            else:
+                break
+    else:
+        raise ValueError("It's not yet possible to enter anything but 'month' as period!")
+            
+    return vi_Delta
     
-    
-    return dt_OneMonthAgoCorrected
-
-def f_FindNearestDate(self, items, pivot):
-    return min(items, key=lambda x: abs(x - pivot))
-
-
-def f_MonthDelta(self, arg_date1, arg_date2):
-    delta = 0
-    d1 = arg_date1
-    d2 = arg_date2
-    
-    while True:
-        mdays = monthrange(d1.year, d1.month)[1]
-        d1 += timedelta(days=mdays)
-        if d1 <= d2:
-            delta += 1
-        else:
-            break
-    return delta
-
-def f_CutDates(self, start_date, end_date):
-    if (start_date == 'default') or (start_date < self.StockData['price_date'].iloc[0]):
-        start_date = self.StockData['price_date'].iloc[0]
-    if (end_date == 'default') or (end_date > self.StockData['price_date'].iloc[-1]):
-        end_date = self.StockData['price_date'].iloc[-1]
-
-    self.StockData = self.StockData.loc[(self.StockData['price_date'] >= start_date) & (self.StockData['price_date'] <= end_date)].copy()
+#==============================================================================
+# def f_SubtractMonths(self,sourcedate,months):
+#     month = sourcedate.month - months - 1
+#     year = int(sourcedate.year + month / 12 )
+#     month = month % 12 + 1
+#     day = min(sourcedate.day,calendar.monthrange(year,month)[1])
+#     
+#     # find nearest date
+#     dt_OneMonthAgo = dt(year,month,day)
+#     dt_OneMonthAgoCorrected = self.f_FindNearestDate(self.StockData['DateTime'],dt_OneMonthAgo)
+#     
+#     
+#     
+#     return dt_OneMonthAgoCorrected
+#==============================================================================
