@@ -189,7 +189,8 @@ class Strategy(object):
     #######################################  BEGIN   ############################################
     #############################################################################################
     
-    
+    def f_CompareDfs(self):
+        return []
     
     def GoldenCross(self, dic_Indicator1,dic_Indicator2):
         dic_Output ={"VariableType":'SingleBuyOrSellCriteria',"Indicator1":dic_Indicator1,"Indicator2":dic_Indicator2,"BuySellCriteria":'GoldenCross'}
