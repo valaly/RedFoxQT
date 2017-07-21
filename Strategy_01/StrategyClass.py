@@ -117,14 +117,14 @@ class Strategy(object):
         argumentName=[]
         argumentValue=[]
         
-        dic_Output = FirstOrderIndicator(self, dic_Indicator, vs_IndicatorName, **kwargs)
         
-        
-#        # loop through **kwargs
-#        for key, value in kwargs.iteritems():
-#            argumentName.append(key)
-#            argumentValue.append(value)
-#            
+        # loop through **kwargs
+        for key, value in kwargs.iteritems():
+            argumentName.append(key)
+            argumentValue.append(value)
+
+        # Use FirstORderIndicator function for calculation
+        dic_Output = self.FirstOrderIndicator(self, dic_Indicator, vs_IndicatorName, kwargs)            
 #        
 #    
 #    
