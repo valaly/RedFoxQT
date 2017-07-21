@@ -63,11 +63,11 @@ for i, name in enumerate(column_names[1:]):
     comp_data.rename(columns={name: ''.join(['price_', str(i + 1)])}, inplace=True)
 
 # To adjust
-context['last_order'] = '2016-10-26'
+context['last_order'] = '2017-03-27'
 context['max_notional'] = 1100
-context['positions'] = np.array([0, 8, 0, 0, 0, 0, 0, 0, 0])
+context['positions'] = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 context['check'] = 'monthly'
-context['start_day'] = 26
+context['start_day'] = 27
 
 
 a = RotationalETF(comp_data, context)

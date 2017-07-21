@@ -2,6 +2,7 @@
 #   - tcm
 
 import re
+import os
 import pandas as pd
 import datetime as dt
 from downloader import WebsiteData
@@ -40,7 +41,7 @@ class DatabaseManipulation(object):
         else:
             db_entry = self.fileInfo.loc[self.fileInfo[col_name] == csv_name]
             index = db_entry.index.values[0]
-            db_path = ''.join([db_entry.path[index], '\\', db_entry.name[index]])
+            db_path = ''.join(['../', db_entry.path[index], '/', db_entry.name[index]])
             db_info = pd.read_csv(db_path)
             dic = {'name': db_entry.name[index],
                    'path': db_entry.path[index],
@@ -51,7 +52,7 @@ class DatabaseManipulation(object):
             return dic
 
     def save_csv(self, name, dataframe):
-        path = ''.join([self.data[name]['path'], '\\', self.data[name]['name']])
+        path = ''.join(['../', self.data[name]['path'], '/', self.data[name]['name']])
         dataframe.to_csv(path, index=False)
 
     #@staticmethod
@@ -62,7 +63,7 @@ class DatabaseManipulation(object):
 class DatabaseManipulationSM(DatabaseManipulation):
     def __init__(self):
         name = 'Securities Master Database'
-        file_csv = 'dbSM_fileInfo.csv'
+        file_csv = '../dbSM_fileInfo.csv'
         DatabaseManipulation.__init__(self, name, file_csv)
 
     def get_website_url(self, vendor_id, ticker):
@@ -163,7 +164,7 @@ class DatabaseManipulationSM(DatabaseManipulation):
         df = self.adjust_splits(df, ticker, fixed_df['price_date'][fixed_df.index[0]])
 
         # Overwrite existing csv
-        path = ''.join([self.data[file_name]['path'], '\\', self.data[file_name]['name']])
+        path = ''.join(['../', self.data[file_name]['path'], '/', self.data[file_name]['name']])
         df.to_csv(path, index=False)
 
         # Add it to the existing csv (to_csv)

@@ -63,7 +63,7 @@ class RotationalETF(object):
             indic[1, ind - 1] = sum(np.log(return_pm[-3:] + 1))
             indic[2, ind - 1] = sum(np.log(return_pm[-6:] + 1))
             indic[3, ind - 1] = np.std(np.log(return_pm[-6:] + 1))
-            indic[4, ind - 1] = self._calc_annual_volatility(return_pm)[0]
+            indic[4, ind - 1] = self._calc_annual_volatility(return_pm + 1)[0]
 
         total_volatility = np.mean(indic[4, :])
         indic[5, :] = indic[0, :] * total_volatility / indic[4, :]
