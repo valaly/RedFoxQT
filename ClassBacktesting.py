@@ -3,6 +3,21 @@
 Created on Sat May 20 23:08:18 2017
 
 @author: Valerie
+
+How to use ClassBacktesting:
+    1. First initiate the class with for example:
+        a = ClassBacktesting(l_Data, na_Order, na_OrderTime)
+    2. Then call functions, for example:
+        df_Returns, df_NrOfShares, df_ValueShares = a.get_returns(1000, 'adj_close_price')
+        
+Attributes of the class (self.X):
+    Defined in __init__:
+        self.l_Data
+        self.na_Order
+        self.na_OrderTime
+        
+Functions of the class:
+    get_returns:    provides returns (incl portion in cashflows & shares - in total and per share)
 """
 import pandas as ClassPd
 import numpy as ClassNp
@@ -12,11 +27,15 @@ class ClassBacktesting:
     
     def __init__(self, l_Data, na_Order, na_OrderTime):
         """
-            Description:    initializes the backtesting class
+            Description:        initializes the backtesting class
             Input:
-                l_Data      (list of) dataframes with stock prizes
-                na_Order    numpy array with the orders per time point
-                na_OrderTime     numpy array with the time points (in datetime) corresponding to na_Order
+                l_Data          (list of) dataframes with stock prices. The dataframes should contain at least:
+                                    - 'price_date': column with the dates in string format
+                                    - a price. Name and type do not matter, this will be requested in the next functions.
+                na_Order        numpy array with the orders per time point
+                na_OrderTime    numpy array with the time points (in datetime) corresponding to na_Order
+            Output:
+                none
         """        
         # Check that the inputs are the correct type
         if not isinstance(l_Data, list) and not isinstance(l_Data, ClassPd.DataFrame):
@@ -44,16 +63,22 @@ class ClassBacktesting:
         
     def get_returns(self, vi_Notional, vs_PriceType = 'adj_close_price'):
         """
-            Description:    determines the returns of the given data for the given orders
+            Description:        determines the returns of the given data for the given orders
             Input:
                 vi_Notional     the initial amount of money put into the strategy
                 vs_PriceType    the price type on which the returns should be based
             Output: 
-                na_Time         array with the dates corresponding to the points in the following arrays
-                na_NrOfShares   the number of shares in portfolio at each day 
-                                    (corresponding to dates in l_Data)
-                na_ValueShares  the total value per stock at each day 
-                na_ValueCash    the total value in cash at each day
+                df_Returns      dataframe with: 
+                                    - the date ('price_date') corresponding to dates in l_Data
+                                    - total returns ('returns') per date
+                                    - part of returns that was in cash ('value_cash') per date
+                                    - part of returns that was in shares ('value_shares') per date
+                df_NrOfShares   dataframe with:
+                                    - the date ('price_date') corresponding to dates in l_Data
+                                    - the number of shares per share ('NrOfShares_X') per date
+                df_ValueShares  dataframe with:
+                                    - the date ('price_date') corresponding to dates in l_Data
+                                    - the value of shares per share ('ValueShares_X') per date
         """
         
         # Check that vi_Notional is a scalar larger than 0
@@ -102,23 +127,26 @@ class ClassBacktesting:
                         vi_BuyShares = ClassNp.floor(vd_StartCash * vd_Order / na_Prices[vi_DataInd, vi_SecInd])
                         na_NrOfShares[vi_DataInd, vi_SecInd] += vi_BuyShares
                         na_ValueCash[vi_DataInd] += -1 * vi_BuyShares * na_Prices[vi_DataInd, vi_SecInd]
-                                        
+                        print na_NrOfShares[vi_DataInd, :]                
                 # Increase the pointer to the na_OrderTime
                 vi_TimeInd += 1
                 
             # Since the number of shares have now been updated, determine how much the value is
             na_ValueShares[vi_DataInd, :] = na_Prices[vi_DataInd, :] * na_NrOfShares[vi_DataInd, :]
-            
+        
+        # Create the dataframes
         df_Returns = ClassPd.DataFrame(data={'price_date': na_Time, 
                                             'returns': ClassNp.sum(na_ValueShares, axis=1) + na_ValueCash[:,0],
                                             'valuecash': na_ValueCash[:,0],
                                             'value_shares': ClassNp.sum(na_ValueShares, axis=1)})
         df_NrOfShares = ClassPd.DataFrame(columns = [col.replace(vs_PriceType, 'NrOfShares') for col in df_Data.columns])    
         df_NrOfShares.loc[:, 'price_date'] = na_Time
-        df_NrOfShares.loc[:, 1:] = na_NrOfShares
+        for vi_SecInd, vs_Column in enumerate(df_NrOfShares.columns[1:]):
+            df_NrOfShares.loc[:, vs_Column] = na_NrOfShares[:, vi_SecInd]
                          
         df_ValueShares = ClassPd.DataFrame(columns = [col.replace(vs_PriceType, 'ValueShares') for col in df_Data.columns])    
         df_ValueShares.loc[:, 'price_date'] = na_Time
-        df_ValueShares.loc[:, 1:] = na_ValueShares
-                  
+        for vi_SecInd, vs_Column in enumerate(df_ValueShares.columns[1:]):
+            df_ValueShares.loc[:, vs_Column] = na_ValueShares[:, vi_SecInd]
+
         return df_Returns, df_NrOfShares, df_ValueShares

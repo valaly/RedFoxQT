@@ -130,8 +130,8 @@ while (vi_Ind < len(ps_Date)) & (vi_DrInd < len(na_Dr)):
     if sum(na_Order[vi_Ind, :]) != 0:
         dic_Context['last_order'] = df_TestData.loc[vi_Ind + vi_StartPoint, 'price_date']
 
-    print vi_Ind, len(ps_Date), dic_Context['check'], ps_Date[vi_Ind]
-    print dic_Context['positions']
+    #print vi_Ind, len(ps_Date), dic_Context['check'], ps_Date[vi_Ind]
+    #print dic_Context['positions']
     
     #l_TmpOrderDate.extend([df_TestData.loc[vi_Ind + vi_StartPoint, 'price_date']])
     
