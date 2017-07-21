@@ -3,16 +3,6 @@
 """
 Created on Fri Jul 21 17:22:18 2017
 
-<<<<<<< HEAD
-
-Hier komt documentatie tekst
-
-@author: emiel
-"""
-
-import os
-import pandas as pd
-=======
 @author: Emiel & Valerie
 
 Documentation text to come
@@ -20,26 +10,11 @@ Documentation text to come
 
 import os
 import pandas as ClassPd
->>>>>>> Emiel_Branch
 from datetime import datetime as dt
 from calendar import monthrange
 from datetime import timedelta as timedelta
 import calendar
 
-<<<<<<< HEAD
-## Reading Data --------------------------------------------- 
-def readData(self):
-
-    #READ  data  
-    path = r"/Users/emiel/Dropbox/MySharedDocuments/04_RedFox/02_PythonFiles/SM_Database/daily_price"
-    os.chdir(path)
-    with open('daily_price_'+self.name+'.csv', 'rb') as csvfile:
-        self.StockData = pd.read_csv(csvfile)   
-#            self.StockData['DateTime'] = pd.to_datetime(self.StockData['price_date'].values).date
-        
-        self.StockData['DateTime'] = [dt.strptime(x, '%Y-%m-%d') for x in self.StockData['price_date']]
-    
-=======
 def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix=""):
     """
         Description:        reads a csv file into a dataframe
@@ -62,9 +37,6 @@ def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix=""):
 
     return df_Data    
         
-
- 
->>>>>>> Emiel_Branch
 def f_SubtractMonths(self,sourcedate,months):
     month = sourcedate.month - months - 1
     year = int(sourcedate.year + month / 12 )
@@ -103,9 +75,5 @@ def f_CutDates(self, start_date, end_date):
     if (end_date == 'default') or (end_date > self.StockData['price_date'].iloc[-1]):
         end_date = self.StockData['price_date'].iloc[-1]
 
-<<<<<<< HEAD
     self.StockData = self.StockData.loc[(self.StockData['price_date'] >= start_date) & (self.StockData['price_date'] <= end_date)].copy()
-    
-=======
-    self.StockData = self.StockData.loc[(self.StockData['price_date'] >= start_date) & (self.StockData['price_date'] <= end_date)].copy()
->>>>>>> Emiel_Branch
+
