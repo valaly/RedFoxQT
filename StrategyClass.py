@@ -9,16 +9,24 @@ Created on Sat Mar 11 15:33:32 2017
 import numpy as np
 import talib
 import pandas as pd
- 
+import DataFrameManipulation as m_Dfm 
+
+
 # Strategey Class
 # define class
 class Strategy(object):
-    def __init__(self,name):
-        self.name = name
-        self.description = "description??"
+    def __init__(self,l_Name, vs_Path="", vs_Prefix="",vs_Postfix=""):
         
-        
-        
+        # Store the variables (if l_Name is a string, change it to a list)
+        if isinstance(l_Name, str):
+            self.l_Name = [l_Name]
+        else:
+            self.l_Name = l_Name
+      
+        # Loop through all Tickers and write data to list
+        self.l_Data = [m_Dfm.f_ReadCsv(vs_Ticker, vs_Path, vs_Prefix, vs_Postfix) for vs_Ticker in self.l_Name]
+  
+
 
     #############################################################################################
     ####################################### INDICATORS ##########################################
@@ -31,24 +39,20 @@ class Strategy(object):
     def FirstOrderIndicator(self,vs_IndicatorName, **kwargs):
         
         # initiate
-        dic_Output={"VariableType":'FirstOrderIndicator',"StockName":self.name, "IndicatorName":vs_IndicatorName}
-        a = _CalcIndicator(vs_IndicatorName,kwargs)
-#        dic_Output.update(CalcIndicator(vs_IndicatorName,kwargs))
+        #dic_Output={"VariableType":'FirstOrderIndicator',"StockName":self.l_Name, "IndicatorName":vs_IndicatorName
         
-        return dic_Output
-    #
+        self.l_FirstOrderIndicatorValues= self._CalcIndicator('FirstOrder',self.l_Data,vs_IndicatorName,arguments = kwargs)
     
-    def SecondOrderIndicator(self,vs_IndicatorName, **kwargs):
+    def SecondOrderIndicator(self, l_Data, vs_IndicatorName,**kwargs):
          # initiate
-        dic_Output={"VariableType":'SecondOrderIndicator',"StockName":self.name, "IndicatorName":vs_IndicatorName}
+        #dic_Output={"VariableType":'SecondOrderIndicator',"StockName":self.name, "IndicatorName":vs_IndicatorName}
 
 
-        # Use FirstORderIndicator function for calculation
-        dic_Output = CalcIndicator(dic_Indicator, vs_IndicatorName, kwargs)            
-#        
-#    
-#    
-#        if 'TimeValue' in argumentName:
+        self.l_SecondOrderIndicatorValues= self._CalcIndicator('SecondOrder',l_Data,vs_IndicatorName,arguments = kwargs)           
+##        
+##    
+##    
+##        if 'TimeValue' in argumentName:
 #            vi_TimeValue = argumentValue[argumentName.index('TimeValue')]
 #            dic_Output.update({"TimeValue":vi_TimeValue})
 #    
@@ -76,7 +80,7 @@ class Strategy(object):
 
 
 
-        return dic_Output   
+#        return dic_Output   
      
         
     
@@ -235,82 +239,74 @@ class Strategy(object):
     #############################################################################################   
 
     @staticmethod
-    def _CalcIndicator(df_Stock,vs_IndicatorName,**kwargs):
+    def _CalcIndicator(IndicatorOrder,l_Data,vs_IndicatorName,**kwargs):
         dic_Output=[]
         argumentName=[]
         argumentValue=[]
+        ld_UsedPrice = []
+        l_IndicatorValues=[]
+        
+        
         
         # loop through **kwargs
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs['arguments'].iteritems():
             argumentName.append(key)
             argumentValue.append(value)
                         
-        
-        
-        
-        # Read and assign all input arguments            
-        if 'PriceType' in argumentName:
-            vs_PriceType = argumentValue[argumentName.index('PriceType')]
-            dic_Output.update({"PriceType":vs_PriceType})
-        else:
-            vs_PriceType = 'OpenPrice'
-            
-        if vs_PriceType == 'OpenPrice':
-            ld_UsedPrice =df_Stock.StockData['open_price'] 
-        elif vs_PriceType == 'ClosePrice':
-            ld_UsedPrice =df_Stock.StockData['close_price'] 
-        elif vs_PriceType == 'LowPrice':
-            ld_UsedPrice =df_Stock.StockData['low_price'] 
-        elif vs_PriceType == 'HighPrice':
-            ld_UsedPrice =df_Stock.StockData['high_price'] 
-    
-            
-    
         if 'TimeValue' in argumentName:
             vi_TimeValue = argumentValue[argumentName.index('TimeValue')]
-            dic_Output.update({"TimeValue":vi_TimeValue})
+            #dic_Output.update({"TimeValue":vi_TimeValue})        
+        else:
+            vi_TimeValue = 11
+            print('Warning: Default TimeValue used: 10 days ')
         
+        # Read and assign all input arguments            
     
-    
-    # check which indicator is to be calculated
-            #   Implemented so far
-            #   'Name' | 'Arguments'
-            #   SMA - Simple Moving Average | timeValue
-            #   EMA - Exponential Moving Average | timeValue
-            #
+        if 'DataType' in argumentName:
+            vs_DataType = argumentValue[argumentName.index('DataType')]
+            #dic_Output.update({"PriceType":vs_PriceType})
+        else:
+            if IndicatorOrder == 'FirstOrder':
+                vs_DataType = 'adj_close_price'
+                print('Warning: Default price used: adj_close_price')  
+            elif IndicatorOrder == 'SecondOrder':
+                raise ValueError('Give the name of the FirstOrder indicator which should be used as an input.')                            
+        
+        # loop through all Tickers
+        for df in l_Data:
+            df_Indic=pd.DataFrame(data = {"price_date": df['price_date']})
+            # Check Indicator Type and Calculate Result        
+            if vs_IndicatorName == 'SMA':
+                df_Indic.loc[:,'_'.join([vs_IndicatorName,str(vi_TimeValue)])]=talib.SMA(np.array(df[vs_DataType]),timeperiod = vi_TimeValue)
+                l_IndicatorValues.append(df_Indic)
+            elif vs_IndicatorName == 'EMA':
+                df_Indic.loc[:,'_'.join([vs_IndicatorName,str(vi_TimeValue)])]=talib.EMA(np.array(df[vs_DataType]),timeperiod = vi_TimeValue)
+                l_IndicatorValues.append(df_Indic)
             
-          
-        
-        # Check Indicator Type and Calculate Result        
-        if vs_IndicatorName == 'SMA':
-            result = talib.SMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
-        
-        elif vs_IndicatorName == 'EMA':
-            result = talib.EMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
-        
-        elif vs_IndicatorName == 'ReturnPerformance':
-            #The monthly performance is calculated as follows: natural logarithm of (price/price_1_month_earlier + 1).
-            result = np.log(np.array(ld_UsedPrice)/np.array(ld_UsedPrice-vi_TimeValue)+1)
-        
-        elif vs_IndicatorName == 'Volatility':
-            result=[]
-            for i in range(len(np.array(ld_UsedPrice))):
-                # Calculate the monthly volatility | Take standard deviation of the past month (21days) multiplied by sqrt(T)
-                volatility = np.std(np.array(ld_UsedPrice[i-21:i]))*np.sqrt(12)
-                result = np.append(result,volatility)
-        
-        elif vs_IndicatorName == 'ATR': # be carefull with the timevalue
-            result=talib.ATR(np.array(self.StockData['high_price'] ),np.array(self.StockData['low_price'] ),np.array(self.StockData['close_price'] ),timevalue=21)
-
-
-        elif vs_IndicatorName == 'Performance':
-            result= f_CalcResult(ld_UsedPrice)
-        dic_Output.update({"Result" :result})
+#            elif vs_IndicatorName == 'ReturnPerformance':
+#                #The monthly performance is calculated as follows: natural logarithm of (price/price_1_month_earlier + 1).
+#                result = np.log(np.array(ld_UsedPrice)/np.array(ld_UsedPrice-vi_TimeValue)+1)
+            
+            elif vs_IndicatorName == 'Volatility':
+                result=[]
+                for i in range(len(np.array(ld_UsedPrice))):
+                    # Calculate the monthly volatility | Take standard deviation of the past month (21days) multiplied by sqrt(T)
+                    volatility = np.std(np.array(ld_UsedPrice[i-21:i]))*np.sqrt(12)
+                    result = np.append(result,volatility)
+                    l_IndicatorValues.append(result)
+                    
+#            elif vs_IndicatorName == 'ATR': # be carefull with the timevalue
+#                result=talib.ATR(np.array(self.StockData['high_price'] ),np.array(self.StockData['low_price'] ),np.array(self.StockData['close_price'] ),timevalue=21)
     
-        # Pass datetime object to output
-        dic_Output.update({"dt_object":self.StockData['DateTime']})
     
+#            elif vs_IndicatorName == 'Performance':
+#                result= f_CalcResult(ld_UsedPrice)
+#    #        dic_Output.update({"Result" :result})
         
+    #        # Pass datetime object to output
+    #        dic_Output.update({"dt_object":self.StockData['DateTime']})
+    
+        return l_IndicatorValues
 
     #############################################################################################
     ####################################### STATIC FUNCTIONS ####################################
