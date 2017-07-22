@@ -6,6 +6,7 @@ import df_manipulation as m_Dfm
 import pandas as ClassPd
 import datetime as ClassDt
 from strategy3 import RotationalETF
+from ClassBacktesting import ClassBacktesting
 
 o_DBSM = DatabaseManipulationSM()
 
@@ -56,27 +57,23 @@ for vi_Tmp, df_Tmp in enumerate(l_Data):
     l_PerfData[vi_Tmp] = m_Dfm.cut_dates(df_Tmp, dic_Context['start_date'], dic_Context['end_date'])
     l_TestData[vi_Tmp] = m_Dfm.cut_dates(df_Tmp, 'default', dic_Context['end_date'])
 
-# Transform it into a Pandas Dataframe
-df_Perf = m_Dfm.merge_dfs(l_PerfData)
-df_Test = m_Dfm.merge_dfs(l_TestData)
-
-# !! Note to self: Use close prices --> this isn't very general yet....
-
 # Create the test data dataframe
 # This data is only the price data needed for computing the order
+# !! Note to self: Use close prices --> this isn't very general yet....
 vs_TestPriceType = 'close_price'
+df_Test = m_Dfm.merge_dfs(l_TestData, 'price_date', [vs_TestPriceType])
 l_ColumnNames = ['price_date'] + [x for x in df_Test.columns.values if x.startswith(vs_TestPriceType)]
 df_TestData = df_Test.loc[:, l_ColumnNames]
 
 for vi_Tmp, vs_Name in enumerate(l_ColumnNames[1:]):
     df_TestData.rename(columns={vs_Name: ''.join(['price_', str(vi_Tmp + 1)])}, inplace=True)
 
-# !! Note to self: Use adjusted close price --> also not general yet...
-
 # Create the performance data dataframe
 # This data is the price data needed for calculating the performance (returns)
+# !! Note to self: Use adjusted close price --> also not general yet...
 vs_PerfPriceType = 'adj_close_price'
-l_ColumnNames = ['price_date'] + [x for x in df_Test.columns.values if x.startswith(vs_PerfPriceType)]
+df_Perf = m_Dfm.merge_dfs(l_PerfData, 'price_date', [vs_PerfPriceType])
+l_ColumnNames = ['price_date'] + [x for x in df_Perf.columns.values if x.startswith(vs_PerfPriceType)]
 df_PerfData = df_Perf.loc[:, l_ColumnNames]
 
 for vi_Tmp, vs_Name in enumerate(l_ColumnNames[1:]):
@@ -118,7 +115,7 @@ na_Cr = na_CrCompl[na_IndU]
 vi_DrInd = 0
 vi_Ind = 0
 na_OrderMatrix = ClassNp.zeros(shape=(ClassNp.shape(na_Order)[0], ClassNp.shape(na_Order)[1]))
-l_TmpOrderDate = []
+#l_TmpOrderDate = []
 
 # Run strategy for all dates
 while (vi_Ind < len(ps_Date)) & (vi_DrInd < len(na_Dr)):
@@ -133,10 +130,10 @@ while (vi_Ind < len(ps_Date)) & (vi_DrInd < len(na_Dr)):
     if sum(na_Order[vi_Ind, :]) != 0:
         dic_Context['last_order'] = df_TestData.loc[vi_Ind + vi_StartPoint, 'price_date']
 
-    print vi_Ind, len(ps_Date), dic_Context['check'], ps_Date[vi_Ind]
-    print dic_Context['positions']
+    #print vi_Ind, len(ps_Date), dic_Context['check'], ps_Date[vi_Ind]
+    #print dic_Context['positions']
     
-    l_TmpOrderDate.extend([df_TestData.loc[vi_Ind + vi_StartPoint, 'price_date']])
+    #l_TmpOrderDate.extend([df_TestData.loc[vi_Ind + vi_StartPoint, 'price_date']])
     
     if ClassNp.amax(na_Order[vi_Ind, :]) > 0:
         na_OrderMatrix[vi_Ind, :] = na_Order[vi_Ind,:] / ClassNp.amax(na_Order[vi_Ind, :])
@@ -145,11 +142,15 @@ while (vi_Ind < len(ps_Date)) & (vi_DrInd < len(na_Dr)):
     else:
         na_OrderMatrix[vi_Ind, :] = na_Order[vi_Ind, :]
     
-ps_OrderDate = ClassPd.to_datetime(l_TmpOrderDate).date  
-
+#ps_OrderDate = ClassPd.to_datetime(l_TmpOrderDate).date  
+na_OrderDate = df_Perf['price_date'].values
+                                   
 """
 Now to start the backtesting!!
 """
+
+test = ClassBacktesting(l_Data, na_OrderMatrix, na_OrderDate)
+df_Returns, df_NrOfShares, df_ValueShares = test.get_returns(1000)
 
 # voor return een matrix maken met hoeveel geld er in elk aandeel zit, plus extra kolom met #geld in cash
 # de som van de rij is dan de hoeveelheid geld in totaal in die strategie

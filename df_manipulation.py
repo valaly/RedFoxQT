@@ -13,25 +13,35 @@ def cut_dates(df, start_date, end_date):
     return df
 
 
-def merge_dfs(list_df):
-    merged_df = None
-    base_columns = ['open_price_', 'high_price_', 'low_price_', 'close_price_', 'adj_close_price_', 'volume_']
+def merge_dfs(l_Df, vs_CommonCol, l_IncludeCols):
+    """
+        Description:        merges dataframes based on one column they have in common
+        In:     
+            l_Df            list of dataframes to be merged
+            vs_CommonCol    name (string) of the column the dataframes should be merged on
+            l_IncludeCols   list of the names of the columns that should be included in the
+                                merged dataframe, if present in the original dataframes
+    """
+    # Make a copy of the original, just to be sure you're not changing the original
+    l_DfCopy = l_Df
+    
+    df_Merged = None
 
-    for i, df in enumerate(list_df):
-        new_columns = [x + str(i + 1) for x in base_columns]
-        df.rename(columns={'open_price': new_columns[0]}, inplace=True)
-        df.rename(columns={'high_price': new_columns[1]}, inplace=True)
-        df.rename(columns={'low_price': new_columns[2]}, inplace=True)
-        df.rename(columns={'close_price': new_columns[3]}, inplace=True)
-        df.rename(columns={'adj_close_price': new_columns[4]}, inplace=True)
-        df.rename(columns={'volume': new_columns[5]}, inplace=True)
+    for vi_Index, df_Copy in enumerate(l_DfCopy):
+        # Determine which columns should be included, and how they should be named
+        l_OldNames = [x for x in df_Copy.columns if x in l_IncludeCols]
+        l_NewNames = [x + '_' + str(vi_Index + 1) for x in l_OldNames]
+        
+        for vs_OldName, vs_NewName in zip(l_OldNames, l_NewNames):
+            df_Copy.rename(columns={vs_OldName: vs_NewName}, inplace=True)
+        
+        # If this is the first dataframe, there is nothing to merge yet
+        if vi_Index == 0:
+            df_Merged = df_Copy.ix[:, [vs_CommonCol] + l_NewNames].copy()
+        elif vi_Index > 0:
+            df_Merged = df_Merged.merge(df_Copy.ix[:, [vs_CommonCol] + l_NewNames], how='left')
 
-        if i == 0:
-            merged_df = df.ix[:, ['price_date'] + new_columns].copy()
-        if i > 0:
-            merged_df = merged_df.merge(df.ix[:, ['price_date'] + new_columns], how='left')
-
-    return merged_df
+    return df_Merged
 
 
 def get_date_range(start_date, end_date, period, period_date=1, last_point_now=True):
