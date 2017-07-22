@@ -71,20 +71,32 @@ def f_CutDates(df_Data, vs_StartDate='default', vs_EndDate='default'):
     """
         Description:        trims a dataframe to start at vs_StartDate and end at vs_EndDate
         Input:
-            df_Data         pandas dataframe with a column 'price_date' with strings of dates
+            df_Data         (list of) pandas dataframes with a column 'price_date' with strings of dates
             vs_StartDate    string of date at which data should start. If this is before the first date in the data, nothing will change.
             vs_EndDate      string of date at which data should end. If this is after the last date in the data, nothing will change
         Output:
-            df_Data         trimmed dataframe
+            df_Trim         trimmed dataframe
     """
     
-    if (vs_StartDate == 'default') or (vs_StartDate < df_Data['price_date'].iloc[0]):
-        vs_StartDate = df_Data['price_date'].iloc[0]
-    if (vs_EndDate == 'default') or (vs_EndDate > df_Data['price_date'].iloc[-1]):
-        vs_EndDate = df_Data['price_date'].iloc[-1]
+    if isinstance(df_Data, ClassPd.DataFrame):
+        l_Data = [df_Data]
+    else:
+        l_Data = df_Data
+    
+    l_Trim = []
+    for df_Tmp in l_Data:
+        if (vs_StartDate == 'default') or (vs_StartDate < df_Tmp['price_date'].iloc[0]):
+            vs_StartDate = df_Tmp['price_date'].iloc[0]
+        if (vs_EndDate == 'default') or (vs_EndDate > df_Tmp['price_date'].iloc[-1]):
+            vs_EndDate = df_Tmp['price_date'].iloc[-1]
 
-    df_Data = df_Data.loc[(df_Data['price_date'] >= vs_StartDate) & (df_Data['price_date'] <= vs_EndDate)].copy()
-    return df_Data
+        df_Trim = df_Tmp.loc[(df_Tmp['price_date'] >= vs_StartDate) & (df_Tmp['price_date'] <= vs_EndDate)].copy()
+        l_Trim.append(df_Trim)
+    
+    if isinstance(df_Data, ClassPd.DataFrame):
+        return l_Trim[0]
+    else:
+        return l_Trim
 
 
 def f_FindCommonDates(l_Data):
