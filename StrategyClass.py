@@ -32,99 +32,19 @@ class Strategy(object):
         
         # initiate
         dic_Output={"VariableType":'FirstOrderIndicator',"StockName":self.name, "IndicatorName":vs_IndicatorName}
-        argumentName=[]
-        argumentValue=[]
-        
-        # loop through **kwargs
-        for key, value in kwargs.iteritems():
-            argumentName.append(key)
-            argumentValue.append(value)
-                        
-        
-        
-        
-        # Read and assign all input arguments            
-        if 'PriceType' in argumentName:
-            vs_PriceType = argumentValue[argumentName.index('PriceType')]
-            dic_Output.update({"PriceType":vs_PriceType})
-        else:
-            vs_PriceType = 'OpenPrice'
-            
-        if vs_PriceType == 'OpenPrice':
-            ld_UsedPrice =self.StockData['open_price'] 
-        elif vs_PriceType == 'ClosePrice':
-            ld_UsedPrice =self.StockData['close_price'] 
-        elif vs_PriceType == 'LowPrice':
-            ld_UsedPrice =self.StockData['low_price'] 
-        elif vs_PriceType == 'HighPrice':
-            ld_UsedPrice =self.StockData['high_price'] 
-    
-            
-    
-        if 'TimeValue' in argumentName:
-            vi_TimeValue = argumentValue[argumentName.index('TimeValue')]
-            dic_Output.update({"TimeValue":vi_TimeValue})
-        
-    
-    
-    # check which indicator is to be calculated
-            #   Implemented so far
-            #   'Name' | 'Arguments'
-            #   SMA - Simple Moving Average | timeValue
-            #   EMA - Exponential Moving Average | timeValue
-            #
-            
-          
-        
-        # Check Indicator Type and Calculate Result        
-        if vs_IndicatorName == 'SMA':
-            result = talib.SMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
-        
-        elif vs_IndicatorName == 'EMA':
-            result = talib.EMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
-        
-        elif vs_IndicatorName == 'ReturnPerformance':
-            #The monthly performance is calculated as follows: natural logarithm of (price/price_1_month_earlier + 1).
-            result = np.log(np.array(ld_UsedPrice)/np.array(ld_UsedPrice-vi_TimeValue)+1)
-        
-        elif vs_IndicatorName == 'Volatility':
-            result=[]
-            for i in range(len(np.array(ld_UsedPrice))):
-                # Calculate the monthly volatility | Take standard deviation of the past month (21days) multiplied by sqrt(T)
-                volatility = np.std(np.array(ld_UsedPrice[i-21:i]))*np.sqrt(12)
-                result = np.append(result,volatility)
-        
-        elif vs_IndicatorName == 'ATR': # be carefull with the timevalue
-            result=talib.ATR(np.array(self.StockData['high_price'] ),np.array(self.StockData['low_price'] ),np.array(self.StockData['close_price'] ),timevalue=21)
-        
-        elif vs_IndicatorName == 'NATR': # be carefull with the timevalue
-            result=talib.NATR(np.array(self.StockData['high_price'] ),np.array(self.StockData['low_price'] ),np.array(self.StockData['close_price'] ),timevalue=21)
-        
-        elif vs_IndicatorName == 'Performance':
-            result= f_CalcResult(ld_UsedPrice)
-        dic_Output.update({"Result" :result})
-    
-        # Pass datetime object to output
-        dic_Output.update({"dt_object":self.StockData['DateTime']})
-    
+        a = _CalcIndicator(vs_IndicatorName,kwargs)
+#        dic_Output.update(CalcIndicator(vs_IndicatorName,kwargs))
         
         return dic_Output
     #
     
-    def SecondOrderIndicator(self,dic_Indicator,vs_IndicatorName, **kwargs):
+    def SecondOrderIndicator(self,vs_IndicatorName, **kwargs):
          # initiate
         dic_Output={"VariableType":'SecondOrderIndicator',"StockName":self.name, "IndicatorName":vs_IndicatorName}
-        argumentName=[]
-        argumentValue=[]
-        
-        
-        # loop through **kwargs
-        for key, value in kwargs.iteritems():
-            argumentName.append(key)
-            argumentValue.append(value)
+
 
         # Use FirstORderIndicator function for calculation
-        dic_Output = self.FirstOrderIndicator(self, dic_Indicator, vs_IndicatorName, kwargs)            
+        dic_Output = CalcIndicator(dic_Indicator, vs_IndicatorName, kwargs)            
 #        
 #    
 #    
@@ -145,36 +65,47 @@ class Strategy(object):
 #        dic_Output.update({"dt_object":self.StockData['DateTime']})
 #    
     
+#        argumentName=[]
+#        argumentValue=[]
+#        
+#        
+#        # loop through **kwargs
+#        for key, value in kwargs.iteritems():
+#            argumentName.append(key)
+#            argumentValue.append(value)
+
+
+
         return dic_Output   
      
         
     
     
-    def determineSlope(self,YValues):
-        
-        slope=[0] * len(YValues)              
-        for i in range(1,len(YValues)):
-             slope[i] = (YValues[i]-YValues[i-1])
-             
-        # assign to class object & output function
-        #self.slope = slope
-        return slope
-    
-    
-    def f_CalcPerformance(self, dt_InputDate, argd_PortfolioAverage):
-        # deze functie gaat er tot nu toe vanuit dat de MAANDELIJKSE performance wordt gevraagd. 
-        
-        # swithc from daily to monthly
-        self.f_ToMonthly( dt_InputDate)
-    
-        # calculate monthly performance
-        self.StockDataMonthly['MonthlyPerformance'] = np.log(self.StockDataMonthly['open_price']/self.StockDataMonthly['open_price_MonthShifted'] + 1)
-        
-        # calculate one/three/six month performance
-        self.StockDataMonthly['OneMonthPerformance']    = self.StockDataMonthly['MonthlyPerformance']*argd_PortfolioAverage/self.StockDataMonthly['AnnualVolatility']
-        self.StockDataMonthly['ThreeMonthPerformance']  = np.sum(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=3)
-        self.StockDataMonthly['SixMonthPerformance']    = np.sum(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=6)
-        return []
+#    def determineSlope(self,YValues):
+#        
+#        slope=[0] * len(YValues)              
+#        for i in range(1,len(YValues)):
+#             slope[i] = (YValues[i]-YValues[i-1])
+#             
+#        # assign to class object & output function
+#        #self.slope = slope
+#        return slope
+#    
+#    
+#    def f_CalcPerformance(self, dt_InputDate, argd_PortfolioAverage):
+#        # deze functie gaat er tot nu toe vanuit dat de MAANDELIJKSE performance wordt gevraagd. 
+#        
+#        # swithc from daily to monthly
+#        self.f_ToMonthly( dt_InputDate)
+#    
+#        # calculate monthly performance
+#        self.StockDataMonthly['MonthlyPerformance'] = np.log(self.StockDataMonthly['open_price']/self.StockDataMonthly['open_price_MonthShifted'] + 1)
+#        
+#        # calculate one/three/six month performance
+#        self.StockDataMonthly['OneMonthPerformance']    = self.StockDataMonthly['MonthlyPerformance']*argd_PortfolioAverage/self.StockDataMonthly['AnnualVolatility']
+#        self.StockDataMonthly['ThreeMonthPerformance']  = np.sum(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=3)
+#        self.StockDataMonthly['SixMonthPerformance']    = np.sum(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=6)
+#        return []
     #############################################################################################
     ####################################### INDICATORS ##########################################
     #######################################    END     ##########################################
@@ -311,11 +242,95 @@ class Strategy(object):
         
         return []
     
-    
+    #############################################################################################
+    ####################################### STATIC FUNCTIONS ####################################
+    #######################################      BEGIN       ####################################
+    #############################################################################################   
 
+    @staticmethod
+    def _CalcIndicator(df_Stock,vs_IndicatorName,**kwargs):
+        dic_Output=[]
+        argumentName=[]
+        argumentValue=[]
+        
+        # loop through **kwargs
+        for key, value in kwargs.iteritems():
+            argumentName.append(key)
+            argumentValue.append(value)
+                        
         
         
-
+        
+        # Read and assign all input arguments            
+        if 'PriceType' in argumentName:
+            vs_PriceType = argumentValue[argumentName.index('PriceType')]
+            dic_Output.update({"PriceType":vs_PriceType})
+        else:
+            vs_PriceType = 'OpenPrice'
+            
+        if vs_PriceType == 'OpenPrice':
+            ld_UsedPrice =df_Stock.StockData['open_price'] 
+        elif vs_PriceType == 'ClosePrice':
+            ld_UsedPrice =df_Stock.StockData['close_price'] 
+        elif vs_PriceType == 'LowPrice':
+            ld_UsedPrice =df_Stock.StockData['low_price'] 
+        elif vs_PriceType == 'HighPrice':
+            ld_UsedPrice =df_Stock.StockData['high_price'] 
     
+            
+    
+        if 'TimeValue' in argumentName:
+            vi_TimeValue = argumentValue[argumentName.index('TimeValue')]
+            dic_Output.update({"TimeValue":vi_TimeValue})
+        
+    
+    
+    # check which indicator is to be calculated
+            #   Implemented so far
+            #   'Name' | 'Arguments'
+            #   SMA - Simple Moving Average | timeValue
+            #   EMA - Exponential Moving Average | timeValue
+            #
+            
+          
+        
+        # Check Indicator Type and Calculate Result        
+        if vs_IndicatorName == 'SMA':
+            result = talib.SMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
+        
+        elif vs_IndicatorName == 'EMA':
+            result = talib.EMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
+        
+        elif vs_IndicatorName == 'ReturnPerformance':
+            #The monthly performance is calculated as follows: natural logarithm of (price/price_1_month_earlier + 1).
+            result = np.log(np.array(ld_UsedPrice)/np.array(ld_UsedPrice-vi_TimeValue)+1)
+        
+        elif vs_IndicatorName == 'Volatility':
+            result=[]
+            for i in range(len(np.array(ld_UsedPrice))):
+                # Calculate the monthly volatility | Take standard deviation of the past month (21days) multiplied by sqrt(T)
+                volatility = np.std(np.array(ld_UsedPrice[i-21:i]))*np.sqrt(12)
+                result = np.append(result,volatility)
+        
+        elif vs_IndicatorName == 'ATR': # be carefull with the timevalue
+            result=talib.ATR(np.array(self.StockData['high_price'] ),np.array(self.StockData['low_price'] ),np.array(self.StockData['close_price'] ),timevalue=21)
+        
+        elif vs_IndicatorName == 'NATR': # be carefull with the timevalue
+            result=talib.NATR(np.array(self.StockData['high_price'] ),np.array(self.StockData['low_price'] ),np.array(self.StockData['close_price'] ),timevalue=21)
+        
+        elif vs_IndicatorName == 'Performance':
+            result= f_CalcResult(ld_UsedPrice)
+        dic_Output.update({"Result" :result})
+    
+        # Pass datetime object to output
+        dic_Output.update({"dt_object":self.StockData['DateTime']})
+    
+        
+
+    #############################################################################################
+    ####################################### STATIC FUNCTIONS ####################################
+    #######################################       END        ####################################
+    #############################################################################################   
+ 
  
     
