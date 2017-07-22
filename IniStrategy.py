@@ -35,34 +35,22 @@ l_Name = ['DBC' ,'EFA','IAU','ICF','IWM']
 #l_Name = 'DBC'
 
 ## Read priceinformation 
-a = Strategy(l_Name, vs_Path, vs_Prefix)
-
-# cut dates --> automatiseren
-start_date  = '2008-01-01'
-end_date    = '2012-12-30'
-
-DBC.f_CutDates( start_date, end_date)
-EFA.f_CutDates( start_date, end_date)
-IAU.f_CutDates( start_date, end_date)
-ICF.f_CutDates( start_date, end_date)
-IWM.f_CutDates( start_date, end_date)
-
-## Cut data to same timerange
-# Determine 
+# Note: Data is cut based on optimal date
+df_StockData = Strategy(l_Name, vs_Path, vs_Prefix)
 
 ### STRATEGY STEP 2: Which strategy? -------------------------------------------
 ## First order indicator
 # Volatilty
-portfolio_volatilities =    pd.DataFrame({'DBC':DBC.FirstOrderIndicator('Volatility')['Result'],
-                                          'EFA':EFA.FirstOrderIndicator('Volatility')['Result'],
-                                          'IAU':IAU.FirstOrderIndicator('Volatility')['Result'],
-                                          'ICF':ICF.FirstOrderIndicator('Volatility')['Result'],
-                                          'IWM':IWM.FirstOrderIndicator('Volatility')['Result'],})
 
+#df_StockData.FirstOrderIndicator('Volatility')
+df_StockData.FirstOrderIndicator('EMA')
+df_StockData.FirstOrderIndicator('Volatility')
 
-## Second order indicator
-# Average Volatility
-portfolio_average = portfolio_volatilities.mean(axis=1)
+df_StockData.SecondOrderIndicator('EMA',df_StockData.l_OutputData,DataType='EMA_10__adj_close_price',TimeValue=11)
+B = df_StockData.l_OutputData
+### Second order indicator
+## Average Volatility
+#portfolio_average = df_StockData.l_FirstOrderIndicatorValues
 
 # Performance Indicator
 #DBC.f_CalcPerformance(DBC.StockData['DateTime'].iloc[-1],portfolio_average)
@@ -71,14 +59,14 @@ portfolio_average = portfolio_volatilities.mean(axis=1)
 #ICF.f_CalcPerformance(ICF.StockData['DateTime'].iloc[-1],portfolio_average)
 #IWM.f_CalcPerformance(IWM.StockData['DateTime'].iloc[-1],portfolio_average)
 
-# Performance Indicator
-portfolio_performance = pd.DataFrame({'DBC':DBC.f_CalcPerformance(DBC.StockData['DateTime'].iloc[-1],portfolio_average),
-                                      'EFA':EFA.f_CalcPerformance(EFA.StockData['DateTime'].iloc[-1],portfolio_average),
-                                      'IAU':IAU.f_CalcPerformance(IAU.StockData['DateTime'].iloc[-1],portfolio_average),
-                                      'ICF':ICF.f_CalcPerformance(ICF.StockData['DateTime'].iloc[-1],portfolio_average),
-                                      'IWM':IWM.f_CalcPerformance(IWM.StockData['DateTime'].iloc[-1],portfolio_average)})
-
-## Single buy or Sell Criteria
+## Performance Indicator
+#portfolio_performance = pd.DataFrame({'DBC':DBC.f_CalcPerformance(DBC.StockData['DateTime'].iloc[-1],portfolio_average),
+#                                      'EFA':EFA.f_CalcPerformance(EFA.StockData['DateTime'].iloc[-1],portfolio_average),
+#                                      'IAU':IAU.f_CalcPerformance(IAU.StockData['DateTime'].iloc[-1],portfolio_average),
+#                                      'ICF':ICF.f_CalcPerformance(ICF.StockData['DateTime'].iloc[-1],portfolio_average),
+#                                      'IWM':IWM.f_CalcPerformance(IWM.StockData['DateTime'].iloc[-1],portfolio_average)})
+#
+### Single buy or Sell Criteria
 
 
 # Multiple buy or Sell Criteria
