@@ -22,3 +22,5 @@ dt_ClosestDate, vi_MinIndex = m_Dfm.f_FindNearestDate(df_IWM['date_time'], '2012
 vs_StartDate, vs_EndDate = m_Dfm.f_FindCommonDates([df_DBC, df_IWM])
 
 vi_Months = m_Dfm.f_CountTimePeriod('2012-01-01', '2012-07-08', 'monthly')
+
+na_Dates = m_Dfm.f_ListTimePeriod(df_DBC['date_time'], 'monthly')

@@ -8,14 +8,13 @@ Created on Fri Jul 21 17:22:18 2017
 Documentation text to come
 """
 
-import os
 import pandas as ClassPd
 import numpy as ClassNp
 from datetime import datetime as Dt
 import datetime as ClassDt
 from calendar import monthrange
 from datetime import timedelta as timedelta
-import calendar
+import dateutil.relativedelta as Du
 
 
 def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix=""):
@@ -158,18 +157,40 @@ def f_CountTimePeriod(vs_Date1, vs_Date2, vs_Period):
             
     return vi_Delta
     
-#==============================================================================
-# def f_SubtractMonths(self,sourcedate,months):
-#     month = sourcedate.month - months - 1
-#     year = int(sourcedate.year + month / 12 )
-#     month = month % 12 + 1
-#     day = min(sourcedate.day,calendar.monthrange(year,month)[1])
-#     
-#     # find nearest date
-#     dt_OneMonthAgo = dt(year,month,day)
-#     dt_OneMonthAgoCorrected = self.f_FindNearestDate(self.StockData['DateTime'],dt_OneMonthAgo)
-#     
-#     
-#     
-#     return dt_OneMonthAgoCorrected
-#==============================================================================
+def f_ListTimePeriod(na_DateTime, vs_Period):
+    """
+        Description:            create a list of dates corresponding to X periods ago for a certain timeframe 
+                                (for example 1 month ago, 2 months ago, etc)
+        Input:  
+            na_DateTime         numpy array of pandas series containing datetime dates
+            vs_Period           the period to take into account. Currently possible:
+                                 - 'monthly'
+        Output:
+            na_Dates            numpy array of the dates corresponding to X periods ago
+    """
+    
+    if isinstance(na_DateTime, ClassPd.Series):
+        na_Dt = na_DateTime.values
+    elif isinstance(na_DateTime, ClassNp.ndarray):
+        na_Dt = na_DateTime
+    else:
+        raise TypeError("The date list must be a numpy array or a pandas series!")
+    
+    dt_D1 = na_Dt[0]
+    dt_D2 = na_Dt[-1]
+    dt_XPeriodsAgo = dt_D2
+    
+    l_Dates = []
+    vi_Periods = 1
+    while dt_D1 <= dt_XPeriodsAgo:
+        if vs_Period.lower() in ['monthly', 'month', 'months']:
+            dt_XPeriodsAgo = dt_D2 + Du.relativedelta(months=-vi_Periods)
+        else:
+            raise ValueError("It's not yet possible to enter anything but 'month' as period!")
+        l_NearDate = f_FindNearestDate(na_Dt, dt_XPeriodsAgo)
+        l_Dates.append(l_NearDate[0])
+        vi_Periods += 1
+    
+    na_Dates = ClassNp.array(l_Dates)
+    
+    return na_Dates
