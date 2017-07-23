@@ -91,6 +91,7 @@ def f_CutDates(df_Data, vs_StartDate='default', vs_EndDate='default'):
             vs_EndDate = df_Tmp['price_date'].iloc[-1]
 
         df_Trim = df_Tmp.loc[(df_Tmp['price_date'] >= vs_StartDate) & (df_Tmp['price_date'] <= vs_EndDate)].copy()
+        df_Trim.index = range(0, len(df_Trim['price_date']))
         l_Trim.append(df_Trim)
     
     if isinstance(df_Data, ClassPd.DataFrame):
