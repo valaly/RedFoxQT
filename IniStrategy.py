@@ -31,7 +31,7 @@ vs_Prefix = 'daily_price_'
 
 ### STRATEGY STEP 1: Which stocks? ---------------------------------------------
 ## Select Stocks
-l_Name = ['DBC' ,'EFA','IAU','ICF','IWM']
+l_Name = ['DBC' ,'EFA','IAU','ICF','IWM','SHY','SPY']
 #l_Name = 'DBC'
 
 ## Read priceinformation 
@@ -43,11 +43,23 @@ df_StockData = Strategy(l_Name, vs_Path, vs_Prefix)
 # Volatilty
 
 #df_StockData.FirstOrderIndicator('Volatility')
-df_StockData.FirstOrderIndicator('EMA')
-df_StockData.FirstOrderIndicator('Volatility')
-
-df_StockData.SecondOrderIndicator('EMA',df_StockData.l_OutputData,DataType='EMA_10__adj_close_price',TimeValue=11)
+df_StockData.f_FirstOrderIndicator('EMA')
+df_StockData.f_FirstOrderIndicator('SMA',TimeValue=20, DataType='open_price')
+df_StockData.f_Weighting(['EMA_10__adj_close_price','SMA_20__open_price'],[1,2])
 B = df_StockData.l_OutputData
+C = df_StockData.l_Data
+
+df_StockData.f_Ranking('Weighted')
+D = df_StockData.df_IndicatorOverview
+#E = df_StockData.df_IndicatorOverview[l_Name].append(df_StockData.Index)
+#F = df_StockData.Index
+#df_StockData.FirstOrderIndicator('Volatility')
+
+#df_StockData.SecondOrderIndicator('EMA',df_StockData.l_OutputData,DataType='EMA_10__adj_close_price',TimeValue=11)
+
+
+
+#na_Dates = m_Dfm.f_ListTimePeriod(df_StockData.l_Data['date_time'], 'monthly')
 ### Second order indicator
 ## Average Volatility
 #portfolio_average = df_StockData.l_FirstOrderIndicatorValues
