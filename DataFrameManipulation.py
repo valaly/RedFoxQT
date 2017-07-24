@@ -17,7 +17,7 @@ from datetime import timedelta as timedelta
 import dateutil.relativedelta as Du
 
 
-def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix="", l_Header=None):
+def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix="", l_Header=None, vs_Delim=','):
     """
         Description:        reads a csv file into a dataframe
         Input:  
@@ -35,7 +35,7 @@ def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix="", l_Header=None):
     """    
     
     vs_CsvName = ''.join([vs_Path, vs_Prefix, vs_Name, vs_Postfix, '.csv'])
-    df_Data = ClassPd.read_csv(vs_CsvName, names=l_Header)
+    df_Data = ClassPd.read_csv(vs_CsvName, names=l_Header, sep=vs_Delim)
     if 'price_date' in df_Data.columns:
         df_Data['date_time'] = ClassPd.to_datetime(df_Data['price_date'].values).date
 
