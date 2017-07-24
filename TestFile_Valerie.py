@@ -8,7 +8,7 @@ Created on Fri Jul 21 18:54:04 2017
 import DataFrameManipulation as m_Dfm
 from PlotModule import ClassPlot as ClassPt
 
-vs_Path = 'C:/Users/Valerie/OneDrive/RedFox/Software/SM_Database/daily_price/'
+vs_Path = '/Users/emiel/Dropbox/MySharedDocuments/04_RedFox/02_PythonFiles/SM_Database/daily_price/'
 vs_Prefix = 'daily_price_'
 
 vs_Name = 'IWM'
@@ -37,6 +37,15 @@ df_DBC, df_IWM = m_Dfm.f_CutDates([df_DBC, df_IWM], vs_StartDate, vs_EndDate)
 #Plt.close("all")
 
 
+#<<<<<<< HEAD
+#<<<<<<< HEAD
+#<<<<<<< HEAD
+#na_Dates = m_Dfm.f_ListTimePeriod(df_DBC['date_time'], 'monthly')
+#=======
+#=======
+#>>>>>>> Emiel_Branch
+#na_Dates = m_Dfm.f_ListTimePeriod(df_DBC['date_time'], 'monthly')
+#=======
 # Plot 1
 #a = ClassPt()
 #a.f_Plot(df_DBC,
@@ -44,6 +53,7 @@ df_DBC, df_IWM = m_Dfm.f_CutDates([df_DBC, df_IWM], vs_StartDate, vs_EndDate)
 #         X_column='date_time', Y_columns=['open_price', 'close_price'],
 #         cursor=True,
 #         legend=['DBC', 'IWM'])
+#>>>>>>> Emiel_Branch
 
 # Plot 2
 #a = ClassPt()
@@ -59,15 +69,26 @@ df_DBC, df_IWM = m_Dfm.f_CutDates([df_DBC, df_IWM], vs_StartDate, vs_EndDate)
 #        legend=['DBC_open', 'IWM_close'])
 #
 ## Plot 4
-#a = ClassPt()
-#a.f_SubPlot(211, df_DBC['date_time'], df_DBC['open_price'], second_Y_ax=df_IWM['close_price'], cursor=True)
-#a.f_SubPlot(212, df_IWM['date_time'], df_IWM['open_price'], df_IWM['close_price'], cursor=True)
+a = ClassPt()
+a.f_SubPlot(211, df_DBC['date_time'], df_DBC['open_price'], second_Y_ax=df_IWM['close_price'], cursor=True)
+a.f_SubPlot(212, df_IWM['date_time'], df_IWM['open_price'], df_IWM['close_price'], cursor=True)
 
-# Plot 5
-#a = ClassPt()
-#a.f_SubPlot(211, df_DBC['date_time'], df_DBC['open_price'], 
-#        second_Y_ax=df_IWM['close_price'], 
-#        legend=['DBC_open', 'IWM_close'],
-#        cursor=True)
-#a.f_SubPlot(212, df_IWM['date_time'], df_IWM['open_price'], df_IWM['close_price'], 
-#        cursor=True)
+#<<<<<<< HEAD
+#test4 = m_Dfm.f_CutDates(df_DBC, vs_StartDate, vs_EndDate)
+#test5 = m_Dfm.f_CutDates([df_DBC], vs_StartDate, vs_EndDate)
+#<<<<<<< HEAD
+#test6 = m_Dfm.f_CutDates([df_DBC, df_IWM], vs_StartDate, vs_EndDate)
+#>>>>>>> Emiel_Branch
+#=======
+#test6 = m_Dfm.f_CutDates([df_DBC, df_IWM], vs_StartDate, vs_EndDate)
+#>>>>>>> Emiel_Branch
+#=======
+## Plot 5
+##a = ClassPt()
+##a.f_SubPlot(211, df_DBC['date_time'], df_DBC['open_price'], 
+##        second_Y_ax=df_IWM['close_price'], 
+##        legend=['DBC_open', 'IWM_close'],
+##        cursor=True)
+##a.f_SubPlot(212, df_IWM['date_time'], df_IWM['open_price'], df_IWM['close_price'], 
+##        cursor=True)
+#>>>>>>> Emiel_Branch
