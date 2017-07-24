@@ -80,9 +80,9 @@ class Strategy(object):
             
         '''
         
-        self.l_OutputData = self._CalcIndicator('FirstOrder',   self.l_Data,    vs_IndicatorName,   self.l_OutputData,  arguments = kwargs)
+        self.l_OutputData = self._CalcIndicator('FirstOrder',   self.l_Data,        vs_IndicatorName,   self.l_OutputData,  arguments = kwargs)
         
-    def f_SecondOrderIndicator(self, vs_IndicatorName,l_Data,**kwargs):
+    def f_SecondOrderIndicator(self, vs_IndicatorName,**kwargs):
         
         '''
         Discription:
@@ -95,6 +95,7 @@ class Strategy(object):
                                     ...
         Input:
             vs_IndicatorName:   Name of the indicator to be used
+            l_Data:             Name of the input data, i.e. the column name. E.g. 'Volatility__adj_close_price'
             **TimeValue:        Timevalue required for some of the indicators, like: EMA, SMA,...
             **DataType:         The first order indicator being used. E.g. EMA_11__open_price
             
@@ -106,7 +107,7 @@ class Strategy(object):
         '''
         
         
-        self.l_OutputData = self._CalcIndicator('SecondOrder',  l_Data,         vs_IndicatorName,   self.l_OutputData,  arguments = kwargs)           
+        self.l_OutputData = self._CalcIndicator('SecondOrder',  self.l_OutputData,  vs_IndicatorName,   self.l_OutputData,  arguments = kwargs)           
 
     def f_Weighting(self, l_IndicatorNames, l_WeightingFactors):
         
@@ -226,7 +227,39 @@ class Strategy(object):
     #######################################  BEGIN   ############################################
     #############################################################################################
     
-    def f_CompareDfs(self):
+    def f_CompareDfs(self,args_IndicatorName1,args_IndicatorName2, args_criteria='equal'):
+        '''
+        '''
+
+        print(1000)
+        for i,df in enumerate(self.l_OutputData):
+            diff = []
+            df['CompareDfs']=np.nan
+            for j ,(value1,value2) in enumerate(zip(self.l_OutputData[i][args_IndicatorName1],self.l_OutputData[i][args_IndicatorName2])):
+                diff.append(value1-value2)
+#                self.l_OutputData[i]['Diff'].loc[j] = value1-value2
+                if args_criteria == 'equal':
+                    if diff[j]*diff[j-1] < 0:
+                        self.l_OutputData[i].loc[j,'CompareDfs'] = 1
+                    else:
+                        self.l_OutputData[i].loc[j,'CompareDfs'] = 0
+                elif args_criteria == 'greater':
+                    if diff[j] > 0 :
+                        self.l_OutputData[i].loc[j,'CompareDfs'] = 1
+                    else:
+                        self.l_OutputData[i].loc[j,'CompareDfs'] = 0
+                elif args_criteria == 'less':
+                    if diff[j] < 0 :
+                        self.l_OutputData[i].loc[j,'CompareDfs'] = 1
+                    else:
+                        self.l_OutputData[i].loc[j,'CompareDfs'] = 0   
+
+                    
+                
+                
+                
+        
+        
         return []
     
     def GoldenCross(self, dic_Indicator1,dic_Indicator2):
@@ -369,7 +402,6 @@ class Strategy(object):
         
         argumentName=[]
         argumentValue=[]
-        l_IndicatorValues=[]
         
         if isinstance(l_OutputData,str):
             l_OutputData=[]
