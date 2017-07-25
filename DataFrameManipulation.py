@@ -32,6 +32,9 @@ def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix="", l_Header=None):
         Output:
             df_Data         dataframe with all the csv colums, PLUS a column 'date_time', 
                             which contains datetime version of the 'price_date' column 
+        Example of how to use:
+            import DataFrameManipulation as m_Dfm
+            df_Security = m_Dfm.f_ReadCsv(vs_Ticker, 'C:\DATA\OneDrive\My Documents\GitHub\Data\Quandl_WIKI_Data/'))
     """    
     
     vs_CsvName = ''.join([vs_Path, vs_Prefix, vs_Name, vs_Postfix, '.csv'])

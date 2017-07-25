@@ -23,12 +23,14 @@ import datetime
 from datetime import datetime as dt
 #from dbaccess import DatabaseManipulationSM
 import DataFrameManipulation as m_Dfm
+from ClassBacktesting import ClassBacktesting
+import pdb
 #from datetime import datetime as dt # https://stackoverflow.com/questions/11376080/plot-numpy-datetime64-with-matplotlib
 
 # CRITICAL ADMIN
 vi_SMA_factor_long = 21 # [days]
 vi_SMA_factor_short = 9 # [days]
-vs_price_type = 'Adj. Close' # can be 'Adj. Close', 'Adj. Open', 'Open', 'Close'...
+vs_price_type = 'adj_close_price' # can be 'Adj. Close', 'Adj. Open', 'Open', 'Close'...
 vf_CASH = 1000 # USD to start with
 vf_Fixed_Trans_Cost = 0.5 # USD, fixed
 vf_Perc_Trans_Cost = 0 # fraction
@@ -36,6 +38,8 @@ vf_Fixed_PerStock_Cost = 0.004 # USD/stock
 
 # read in all ticker names and if they have been downloaded or not.
 df_info = pd.read_csv("Quandl-WIKI-datasets-codes_DOWNED20170721_v1.csv") # file should be in current working directory
+
+
 
 # INITIATE THINGS
 # file where we will save the results of the backtesting
@@ -47,10 +51,8 @@ df_Results = pd.DataFrame(index=df_info.index, columns=['ticker',
                                                         'last_date', 
                                                         'tracked_trades']) # create dataframe for the Results (end cash per ticker). index -> # rows, columns = # and names of columns
 
-df_Security = m_Dfm.f_ReadCsv('AAON', 'C:\DATA\OneDrive\My Documents\GitHub\Data\Quandl_WIKI_Data\')
-
 # HERE WE GET THE TICKER NAME FOR THE SECURITY AND CAN LOOP OVER THE TICKERS TO DOWNLOAD THEM ALL    
-for row, vs_Ticker in enumerate(df_info.loc[:, 'Ticker']): # reads over the column called 'Ticker' 
+for row, vs_Ticker in enumerate(df_info.loc[10:10, 'Ticker']): # reads over the column called 'Ticker' 
 #    print row, ' ', vs_Ticker
 
     if df_info.loc[row, 'Downloaded on Date'] != 'not-downed' : # only do any analyses if there is a csv file with price data for this Ticker downloaded
@@ -60,7 +62,16 @@ for row, vs_Ticker in enumerate(df_info.loc[:, 'Ticker']): # reads over the colu
         # get path of datafile (csv) to read in for each ticker. REPLACE WITH YOUR OWN PATH TO FOLDER THAT CONTAINS CSV FILES AND THEIR NAME
 #        path = ''.join(['C:\DATA\OneDrive\My Documents\GitHub\RedFoxQT\Quandl_WIKI_Data', '/', vs_Ticker, '.csv'])
 #        df_Security = pd.read_csv(path) 
-        df_Security = m_Dfm.f_ReadCsv(vs_Ticker, 'C:\DATA\OneDrive\My Documents\GitHub\Data\Quandl_WIKI_Data')
+        df_Security = m_Dfm.f_ReadCsv(vs_Ticker, 'C:\DATA\OneDrive\My Documents\GitHub\Data\Quandl_WIKI_Data/')
+        
+        # change column names
+        df_Security.rename(columns={ 'Unnamed: 0' : 'id', 
+                                    'Date':'price_date', 
+                                    'Open' : 'open_price', 
+                                    'Close' : 'close_price', 
+                                    'High' : 'high_price', 
+                                    'Low' : 'low_price', 
+                                    'Adj. Close' : 'adj_close_price'}, inplace = True) # need to do this to fit in our platform. https://stackoverflow.com/questions/11346283/renaming-columns-in-pandas
         
         # assign prices based on price_type and create training and testing set
         nai_Prices = df_Security[vs_price_type].values
@@ -69,7 +80,7 @@ for row, vs_Ticker in enumerate(df_info.loc[:, 'Ticker']): # reads over the colu
         nai_Prices_Testing_Set = nai_Prices[int(len(nai_Prices)/2):]
         
         # getting DATE that we can PLOT
-        ps_Date = pd.to_datetime(df_Security['Date'])
+        ps_Date = pd.to_datetime(df_Security['price_date'].values).date
         # ps_Date1 = dts.datestr2num(ps_Date)
         # df_Date = df_Date.dt.date
         # date_object = [dt.strptime(x, '%Y-%m-%d') for x in df_Security['Date']]
@@ -91,76 +102,80 @@ for row, vs_Ticker in enumerate(df_info.loc[:, 'Ticker']): # reads over the colu
                 nai_Buy[i] = 1
             elif nai_SMA_long[i]-nai_SMA_short[i] >=0 and nai_SMA_long[i-1]-nai_SMA_short[i-1] <0: # if (nai_SMA_long-nai_SMA_short) becomes positive
                 nai_Buy[i]=-1
-        
-        # EXECUTE BUY/SELL AND CALCULATE RETURNS           
-        nai_CASH_FLOW = np.zeros(len(nai_Prices_Training_Set)+1)
-        nai_STOCK_FLOW = np.zeros(len(nai_Prices_Training_Set)+1) # the # of stocks in possession at any given time
-        nai_TRANS_COST = np.zeros(len(nai_Prices_Training_Set)+1)
-        nai_BUY_SELL_EXECUTED = np.zeros(len(nai_Prices_Training_Set)+1)
-        nai_BUY_SELL_DATE_EXEC = np.empty(len(nai_Prices_Training_Set)+1, dtype = dt)
-        nai_BUY_SELL_DATE_SIGNAL = np.empty(len(nai_Prices_Training_Set)+1, dtype = dt)
-        nai_CASH_FLOW[0] = vf_CASH
-        
-        for i in range(len(nai_Prices_Training_Set)): # loop over the prices in Training_Set. 
-        
-            # if we get a buy or sell signal, we buy at next days price.
-            if nai_Buy[i] == 1 and i < len(nai_Prices_Training_Set)-2 and nai_CASH_FLOW[i] > nai_Prices_Training_Set[i+1] : # don't buy anything at the 2nd to last element or last, even if it has a 'buy' signal there, because we need to be able to sell at the 2nd to last element. also don't buy anything unless you have the CASH_flow to do so.
-               
-                # buys it the next day @ price_type
-                vi_stock_amount = np.floor(nai_CASH_FLOW[i]/nai_Prices_Training_Set[i+1]) # we can buy an integer amount of aandelen @ their price, depending on available cash
-                vi_exact_price = nai_Prices_Training_Set[i+1]*vi_stock_amount 
-                vi_transaction_cost = vf_Fixed_Trans_Cost + vf_Perc_Trans_Cost*vi_stock_amount + vf_Fixed_PerStock_Cost*vi_stock_amount
-                
-                # we can't go negative with cash_flow, so if we would have negative (due to transaction costs), we need to buy fewer stocks
-                while nai_CASH_FLOW[i] - vi_exact_price - vi_transaction_cost < 0 and vi_stock_amount > 0:
-                    vi_stock_amount = vi_stock_amount - 1
-                    vi_exact_price = nai_Prices_Training_Set[i+1]*vi_stock_amount
-                    vi_transaction_cost = vf_Fixed_Trans_Cost + vf_Perc_Trans_Cost*vi_stock_amount + vf_Fixed_PerStock_Cost*vi_stock_amount
-                                                                             
-                nai_CASH_FLOW[i+1] = nai_CASH_FLOW[i] - vi_exact_price - vi_transaction_cost
-                nai_TRANS_COST[i+1] = vi_transaction_cost
-                nai_STOCK_FLOW[i+1] = vi_stock_amount
-                nai_BUY_SELL_EXECUTED[i+1] = 1
-                nai_BUY_SELL_DATE_EXEC[i+1] = ps_Date[i+1]
-                nai_BUY_SELL_DATE_SIGNAL[i] = ps_Date[i]
-                                              
-            elif ( nai_Buy[i] == -1 or i == len(nai_Prices_Training_Set)-2 ) and i < len(nai_Prices_Training_Set)-1 and nai_STOCK_FLOW[i] > 0: #sell at the 2nd to last element. don't sell at the very last element if there is a sell signal because we won't be able to process that sell (sell happens with next open_price). only try and sell something if we have something to sell (first signal might be sell)
-                # sells it the next day @ price_type
-                vi_transaction_cost = vf_Fixed_Trans_Cost + vf_Perc_Trans_Cost*nai_STOCK_FLOW[i] + vf_Fixed_PerStock_Cost*nai_STOCK_FLOW[i]
-                nai_CASH_FLOW[i+1] = nai_CASH_FLOW[i] + nai_STOCK_FLOW[i]*nai_Prices_Training_Set[i+1] - vi_transaction_cost
-                nai_TRANS_COST[i+1] = vi_transaction_cost 
-                nai_STOCK_FLOW[i+1] = 0
-                nai_BUY_SELL_EXECUTED[i+1] = -1
-                nai_BUY_SELL_DATE_EXEC[i+1] = ps_Date[i+1]
-                nai_BUY_SELL_DATE_SIGNAL[i] = ps_Date[i]
-                              
-            else:
-                nai_CASH_FLOW[i+1] = nai_CASH_FLOW[i]
-                nai_STOCK_FLOW[i+1] = nai_STOCK_FLOW[i]
-                
-        # ASSIGN RESULTS TO DATAFRAMES
-        df_Track_Trades = pd.DataFrame(data = {'Buy_Sell_Signal': np.append(nai_Buy, np.nan) , 
-                                               'Date_Signal' : nai_BUY_SELL_DATE_SIGNAL, 
-                                               'Buy_Sell_Executed' : nai_BUY_SELL_EXECUTED, 
-                                               'Date_Executed': nai_BUY_SELL_DATE_EXEC, 
-                                               'Price' : np.append(nai_Prices_Training_Set, np.nan), 
-                                               'Stock_Flow' : nai_STOCK_FLOW, 
-                                               'Cash_Flow' : nai_CASH_FLOW, 
-                                               'Trans_Cost' : nai_TRANS_COST })
-        df_Results.loc[row, :] = [vs_Ticker, 
-                                  nai_CASH_FLOW[-1],
-                                nai_STOCK_FLOW[-1], 
-                                     len(nai_Prices_Training_Set), 
-                                        ps_Date_Testing_Set.iloc[0], 
-                                        ps_Date_Testing_Set.iloc[-1], 
-                                        df_Track_Trades]
-    
-nai_End_CASH = df_Results['end_cash'].tolist()
+                       
+        BackTest = ClassBacktesting(df_Security, nai_Buy, ps_Date_Training_Set)  
+        ret = BackTest.get_returns(vf_CASH)
+         
+
+#        # EXECUTE BUY/SELL AND CALCULATE RETURNS           
+#        nai_CASH_FLOW = np.zeros(len(nai_Prices_Training_Set)+1)
+#        nai_STOCK_FLOW = np.zeros(len(nai_Prices_Training_Set)+1) # the # of stocks in possession at any given time
+#        nai_TRANS_COST = np.zeros(len(nai_Prices_Training_Set)+1)
+#        nai_BUY_SELL_EXECUTED = np.zeros(len(nai_Prices_Training_Set)+1)
+#        nai_BUY_SELL_DATE_EXEC = np.empty(len(nai_Prices_Training_Set)+1, dtype = dt)
+#        nai_BUY_SELL_DATE_SIGNAL = np.empty(len(nai_Prices_Training_Set)+1, dtype = dt)
+#        nai_CASH_FLOW[0] = vf_CASH
+#        
+#        for i in range(len(nai_Prices_Training_Set)): # loop over the prices in Training_Set. 
+#        
+#            # if we get a buy or sell signal, we buy at next days price.
+#            if nai_Buy[i] == 1 and i < len(nai_Prices_Training_Set)-2 and nai_CASH_FLOW[i] > nai_Prices_Training_Set[i+1] : # don't buy anything at the 2nd to last element or last, even if it has a 'buy' signal there, because we need to be able to sell at the 2nd to last element. also don't buy anything unless you have the CASH_flow to do so.
+#               
+#                # buys it the next day @ price_type
+#                vi_stock_amount = np.floor(nai_CASH_FLOW[i]/nai_Prices_Training_Set[i+1]) # we can buy an integer amount of aandelen @ their price, depending on available cash
+#                vi_exact_price = nai_Prices_Training_Set[i+1]*vi_stock_amount 
+#                vi_transaction_cost = vf_Fixed_Trans_Cost + vf_Perc_Trans_Cost*vi_stock_amount + vf_Fixed_PerStock_Cost*vi_stock_amount
+#                
+#                # we can't go negative with cash_flow, so if we would have negative (due to transaction costs), we need to buy fewer stocks
+#                while nai_CASH_FLOW[i] - vi_exact_price - vi_transaction_cost < 0 and vi_stock_amount > 0:
+#                    vi_stock_amount = vi_stock_amount - 1
+#                    vi_exact_price = nai_Prices_Training_Set[i+1]*vi_stock_amount
+#                    vi_transaction_cost = vf_Fixed_Trans_Cost + vf_Perc_Trans_Cost*vi_stock_amount + vf_Fixed_PerStock_Cost*vi_stock_amount
+#                                                                             
+#                nai_CASH_FLOW[i+1] = nai_CASH_FLOW[i] - vi_exact_price - vi_transaction_cost
+#                nai_TRANS_COST[i+1] = vi_transaction_cost
+#                nai_STOCK_FLOW[i+1] = vi_stock_amount
+#                nai_BUY_SELL_EXECUTED[i+1] = 1
+#                nai_BUY_SELL_DATE_EXEC[i+1] = ps_Date[i+1]
+#                nai_BUY_SELL_DATE_SIGNAL[i] = ps_Date[i]
+#                                              
+#            elif ( nai_Buy[i] == -1 or i == len(nai_Prices_Training_Set)-2 ) and i < len(nai_Prices_Training_Set)-1 and nai_STOCK_FLOW[i] > 0: #sell at the 2nd to last element. don't sell at the very last element if there is a sell signal because we won't be able to process that sell (sell happens with next open_price). only try and sell something if we have something to sell (first signal might be sell)
+#                # sells it the next day @ price_type
+#                vi_transaction_cost = vf_Fixed_Trans_Cost + vf_Perc_Trans_Cost*nai_STOCK_FLOW[i] + vf_Fixed_PerStock_Cost*nai_STOCK_FLOW[i]
+#                nai_CASH_FLOW[i+1] = nai_CASH_FLOW[i] + nai_STOCK_FLOW[i]*nai_Prices_Training_Set[i+1] - vi_transaction_cost
+#                nai_TRANS_COST[i+1] = vi_transaction_cost 
+#                nai_STOCK_FLOW[i+1] = 0
+#                nai_BUY_SELL_EXECUTED[i+1] = -1
+#                nai_BUY_SELL_DATE_EXEC[i+1] = ps_Date[i+1]
+#                nai_BUY_SELL_DATE_SIGNAL[i] = ps_Date[i]
+#                              
+#            else:
+#                nai_CASH_FLOW[i+1] = nai_CASH_FLOW[i]
+#                nai_STOCK_FLOW[i+1] = nai_STOCK_FLOW[i]
+#                
+#        # ASSIGN RESULTS TO DATAFRAMES
+#        df_Track_Trades = pd.DataFrame(data = {'Buy_Sell_Signal': np.append(nai_Buy, np.nan) , 
+#                                               'Date_Signal' : nai_BUY_SELL_DATE_SIGNAL, 
+#                                               'Buy_Sell_Executed' : nai_BUY_SELL_EXECUTED, 
+#                                               'Date_Executed': nai_BUY_SELL_DATE_EXEC, 
+#                                               'Price' : np.append(nai_Prices_Training_Set, np.nan), 
+#                                               'Stock_Flow' : nai_STOCK_FLOW, 
+#                                               'Cash_Flow' : nai_CASH_FLOW, 
+#                                               'Trans_Cost' : nai_TRANS_COST })
+#        df_Results.loc[row, :] = [vs_Ticker, 
+#                                  nai_CASH_FLOW[-1],
+#                                nai_STOCK_FLOW[-1], 
+#                                     len(nai_Prices_Training_Set), 
+#                                        ps_Date_Testing_Set.iloc[0], 
+#                                        ps_Date_Testing_Set.iloc[-1], 
+#                                        df_Track_Trades]
+#    
+#nai_End_CASH = df_Results['end_cash'].tolist()
     
 #    dict = {'Name': 'Zara', 'Age': 7, 'Class': 'First'}
 #    print "dict['Name']: ", dict['Name']
     
-
+"""
 #
 plt.close("all") # Closing all previous figures
 #        
@@ -438,7 +453,7 @@ ax1.tick_params('y', colors='b')
 ax1.plot(ps_xaxis, df_Stocks_Selected['Buy_Hold_Return'], 'go', label = 'buy hold return', markerfacecolor='none')
 ax1.legend()
 
-
+"""
 
 """
 NEAT PLOTTING THINGS

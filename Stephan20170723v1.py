@@ -103,7 +103,7 @@ for row, vs_Ticker in enumerate(df_info.loc[:, 'Ticker']): # reads over the colu
         print row, ' ', vs_Ticker
         
         # get path of datafile (csv) to read in for each ticker. REPLACE WITH YOUR OWN PATH TO FOLDER THAT CONTAINS CSV FILES AND THEIR NAME
-        path = ''.join(['C:\DATA\OneDrive\My Documents\GitHub\RedFoxQT\Quandl_WIKI_Data', '/', vs_Ticker, '.csv'])
+        path = ''.join(['C:\DATA\OneDrive\My Documents\GitHub\Data\Quandl_WIKI_Data', '/', vs_Ticker, '.csv'])
         df_Security = pd.read_csv(path) # downloads data from Quandl and puts it in a dataframe format (Valerie made it)
         
         # assign prices based on price_type and create training and testing set

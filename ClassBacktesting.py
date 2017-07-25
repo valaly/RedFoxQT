@@ -22,6 +22,7 @@ Functions of the class:
 import pandas as ClassPd
 import numpy as ClassNp
 import df_manipulation as m_Dfm
+import pdb 
 
 class ClassBacktesting:
     
@@ -32,6 +33,9 @@ class ClassBacktesting:
                 l_Data          (list of) dataframes with stock prices. The dataframes should contain at least:
                                     - 'price_date': column with the dates in string format
                                     - a price. Name and type do not matter, this will be requested in the next functions.
+                                    - the number of dataframes passed in a list must be the same as the number of columns in na_Order
+                                    Make sure the columns names match the standard: id, data_vendor_id, symbol_id	, created_date, last_updated_date, data_checked, price_date, open_price, high_price, low_price, close_price, adj_close_price, volume
+                                    This can be achieved by: df_Security.rename(columns={'oldName1':'newName1', 'oldName2':'newName2' ... }, inplace = True) see: https://stackoverflow.com/questions/11346283/renaming-columns-in-pandas
                 na_Order        numpy array with the orders per time point
                 na_OrderTime    numpy array with the time points (in datetime) corresponding to na_Order
             Output:
@@ -46,19 +50,20 @@ class ClassBacktesting:
             raise TypeError("The time order data must be a numpy array!")
             
         # Check if the order data and the order time data have the same length
-        if len(na_Order) is not len(na_OrderTime):
+        if len(na_Order) != len(na_OrderTime):
             raise ValueError("The order and time order arrays don't have the same length!")
             
-        # Check if the stock data and the order data have the same width (# of stocks)
-        if not (isinstance(l_Data, ClassPd.DataFrame) and len(na_Order[0]) is 1) and not (len(l_Data) is len(na_Order[0])):
-            raise ValueError("The stock data and order data arrays don't have the same number of stocks!")
+        # Check if the stock data and the order data have the same width (# of stocks) if a list of dataframes is passed as l_Data
+#        if isinstance(l_Data, list):
+            if len(na_Order[0]) == 1 and (len(l_Data) != len(na_Order[0])):
+                raise ValueError("The stock data and order data arrays don't have the same number of stocks!")
         
         # Store the variables (if l_Data is a pandas dataframe, change it to a list)
         if isinstance(l_Data, ClassPd.DataFrame):
             self.l_Data = [l_Data]
         else:
             self.l_Data = l_Data
-        self.na_Order = na_Order
+        self.na_Order = ClassNp.vstack(na_Order) # this creates a Nd array of a 1d Numpy array (length,) to (length,1) or (length,n). if array is already Nd nothing changes. 
         self.na_OrderTime = na_OrderTime
         
     def get_returns(self, vi_Notional, vs_PriceType = 'adj_close_price'):
@@ -85,15 +90,16 @@ class ClassBacktesting:
         if not isinstance(vi_Notional, int) and not isinstance(vi_Notional, float):
             raise TypeError("The notional value must be an integer or a float")
     
-        # Convert l_Data to a single dataframe
+        # Convert l_Data to a single dataframe containing 'price_date' on first column and the vs_PriceType columns on the rest
         if len(self.l_Data) > 1:
             df_Data = m_Dfm.merge_dfs([df.loc[:, ('price_date', vs_PriceType)] for df in self.l_Data], 'price_date', [vs_PriceType])
         else:
-            df_Data = self.l_Data[0]['price_date', vs_PriceType]
+            df_Data = self.l_Data[0][['price_date', vs_PriceType]]
         
         # Initialize the array to keep track of the amount of shares, and the amount of money in stocks and in cash
         na_Time = df_Data['price_date'].values
         na_Prices = df_Data.iloc[:, 1:].values
+#        na_NrOfShares = ClassNp.zeros(shape=(ClassNp.shape(self.na_Order)))
         na_NrOfShares = ClassNp.zeros(shape=(len(self.l_Data[0]), len(self.na_Order[0, :])))
         na_ValueShares = ClassNp.zeros(shape=(len(self.l_Data[0]), len(self.na_Order[0, :])))
         na_ValueCash = ClassNp.ones(shape=(len(self.l_Data[0]), 1)) * vi_Notional
@@ -101,6 +107,7 @@ class ClassBacktesting:
         # Start looping through the data
         vi_TimeInd = 0
         for vi_DataInd, dt_Date in enumerate(na_Time):
+            
             # First copy the data of the previous date to this one
             if vi_DataInd > 0:
                 na_NrOfShares[vi_DataInd, :] = na_NrOfShares[vi_DataInd - 1, :]
@@ -108,9 +115,10 @@ class ClassBacktesting:
                 
             # Then see if they need to be updated or not
             if vi_TimeInd < len(self.na_OrderTime) and dt_Date == self.na_OrderTime[vi_TimeInd]:
+                
                 # First check if there is a sell, if so, update the number of shares, and value of cash
                 for vi_SecInd, vd_Order in enumerate(self.na_Order[vi_TimeInd, :]):
-                    if vd_Order < 0 and na_NrOfShares[vi_DataInd, vi_SecInd] < 0:
+                    if vd_Order < 0 and na_NrOfShares[vi_DataInd, vi_SecInd] <= 0:
                         raise ValueError("There are no shares to be sold!")
                     elif vd_Order < 0:
                         vi_SellShares = ClassNp.round(na_NrOfShares[vi_DataInd, vi_SecInd] * vd_Order)
@@ -128,6 +136,7 @@ class ClassBacktesting:
                         na_NrOfShares[vi_DataInd, vi_SecInd] += vi_BuyShares
                         na_ValueCash[vi_DataInd] += -1 * vi_BuyShares * na_Prices[vi_DataInd, vi_SecInd]
                         print na_NrOfShares[vi_DataInd, :]                
+                
                 # Increase the pointer to the na_OrderTime
                 vi_TimeInd += 1
                 
