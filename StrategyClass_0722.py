@@ -8,6 +8,9 @@ Created on Sat Mar 11 15:33:32 2017
 
 # Import
 from datetime import datetime as dt
+from datetime import timedelta as timedelta
+from calendar import monthrange
+
 
 import matplotlib.pyplot as plt
 import matplotlib.finance as fnc
@@ -36,21 +39,11 @@ class Strategy(object):
         path = r"/Users/emiel/Dropbox/MySharedDocuments/04_RedFox/02_PythonFiles/SM_Database/daily_price"
         os.chdir(path)
         with open('daily_price_'+self.name+'.csv', 'rb') as csvfile:
-            AllData = pd.read_csv(csvfile)
+            self.StockData = pd.read_csv(csvfile)   
+#            self.StockData['DateTime'] = pd.to_datetime(self.StockData['price_date'].values).date
             
-            
-            # determine date range
-            self.price_date = AllData['price_date']
-            # convert string to datetime object
-            self.dt_object = [dt.strptime(x, '%Y-%m-%d') for x in self.price_date]
-            
+            self.StockData['DateTime'] = [dt.strptime(x, '%Y-%m-%d') for x in self.StockData['price_date']]
         
-        # nog zorgen dat alle colommen worden gelezen, ipv handmatig 1 voor 1
-        self.open_price = AllData['open_price']        
-        self.close_price = AllData['close_price']
-        self.low_price = AllData['low_price']
-        self.high_price = AllData['high_price']
-
  
     
 
@@ -78,13 +71,13 @@ class Strategy(object):
             vs_PriceType = 'OpenPrice'
             
         if vs_PriceType == 'OpenPrice':
-            ld_UsedPrice = self.open_price
+            ld_UsedPrice =self.StockData['open_price'] 
         elif vs_PriceType == 'ClosePrice':
-            ld_UsedPrice = self.close_price
+            ld_UsedPrice =self.StockData['close_price'] 
         elif vs_PriceType == 'LowPrice':
-            ld_UsedPrice = self.low_price
+            ld_UsedPrice =self.StockData['low_price'] 
         elif vs_PriceType == 'HighPrice':
-            ld_UsedPrice = self.high_price
+            ld_UsedPrice =self.StockData['high_price'] 
 
             
 
@@ -106,27 +99,33 @@ class Strategy(object):
         # Check Indicator Type and Calculate Result        
         if vs_IndicatorName == 'SMA':
             result = talib.SMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
+        
         elif vs_IndicatorName == 'EMA':
             result = talib.EMA(np.array(ld_UsedPrice),timeperiod = vi_TimeValue)
+        
         elif vs_IndicatorName == 'ReturnPerformance':
             #The monthly performance is calculated as follows: natural logarithm of (price/price_1_month_earlier + 1).
             result = np.log(np.array(ld_UsedPrice)/np.array(ld_UsedPrice-vi_TimeValue)+1)
+        
         elif vs_IndicatorName == 'Volatility':
             result=[]
             for i in range(len(np.array(ld_UsedPrice))):
 #                result.append(i) = np.std(np.array(ld_UsedPrice[i-21:i]))*np.sqrt(252)
                 volatility = np.std(np.array(ld_UsedPrice[i-21:i]))*np.sqrt(252)
                 result = np.append(result,volatility)
+        
         elif vs_IndicatorName == 'ATR': # be carefull with the timevalue
-            result=talib.ATR(np.array(self.high_price),np.array(self.low_price),np.array(self.close_price),timevalue=21)
+            result=talib.ATR(np.array(self.StockData['high_price'] ),np.array(self.StockData['low_price'] ),np.array(self.StockData['close_price'] ),timevalue=21)
+        
         elif vs_IndicatorName == 'NATR': # be carefull with the timevalue
-            result=talib.NATR(np.array(self.high_price),np.array(self.low_price),np.array(self.close_price),timevalue=21)
+            result=talib.NATR(np.array(self.StockData['high_price'] ),np.array(self.StockData['low_price'] ),np.array(self.StockData['close_price'] ),timevalue=21)
+        
         elif vs_IndicatorName == 'Performance':
             result= f_CalcResult(ld_UsedPrice)
         dic_Output.update({"Result" :result})
 
         # Pass datetime object to output
-        dic_Output.update({"dt_object":self.dt_object})
+        dic_Output.update({"dt_object":self.StockData['DateTime']})
 
         
         return dic_Output
@@ -160,7 +159,7 @@ class Strategy(object):
         dic_Output.update({"Result":result})
 
         # Pass datetime object to output
-        dic_Output.update({"dt_object":self.dt_object})
+        dic_Output.update({"dt_object":self.StockData['DateTime']})
     
 
         return dic_Output   
@@ -227,7 +226,7 @@ class Strategy(object):
             if slope[i] > lowLimit:
                 if slope[i] < upLimit:
                     x = np.append(x,i)
-                    t = np.append(t,self.dt_object[i])
+                    t = np.append(t,self.StockData['DateTime'][i])
                     y = np.append(y,YValues[i])
         dic_Output.update({"y":y,"t":t})
         return dic_Output
@@ -279,22 +278,22 @@ class Strategy(object):
         
         # choose between open/cloe/high/low and plot datetime object and values. DIT KAN CHIQUER
         if whichPrice == 'OpenPrice':
-            plot = plt.plot(self.dt_object, self.open_price)
+            plot = plt.plot(self.StockData['DateTime'],self.StockData['open_price'] )
         elif whichPrice == 'ClosePrice':
-            plot = plt.plot(self.dt_object, self.close_price)
+            plot = plt.plot(self.StockData['DateTime'],self.StockData['close_price'] )
         elif whichPrice == 'LowPrice':
-            plot = plt.plot(self.dt_object, self.low_price)
+            plot = plt.plot(self.StockData['DateTime'],self.StockData['low_price'] )
         elif whichPrice == 'HighPrice':
-            plot = plt.plot(self.dt_object, self.high_price)
+            plot = plt.plot(self.StockData['DateTime'],self.StockData['high_price'] )
         elif whichPrice == 'CandleStick':
             plot, ax = plt.subplots()
-            fnc.candlestick2_ochl(ax, self.open_price, self.high_price, self.low_price, self.close_price, width=0.5, colorup='k', colordown='r', alpha=0.75)
+            fnc.candlestick2_ochl(ax,self.StockData['open_price'] ,self.StockData['high_price'] ,self.StockData['low_price'] ,self.StockData['close_price'] , width=0.5, colorup='k', colordown='r', alpha=0.75)
             
             ax.xaxis.set_major_locator(ticker.MaxNLocator(15))
             
             def mydate(x,pos):
                 try:
-                    return self.dt_object[int(x)]
+                    return self.StockData['DateTime'][int(x)]
                 except IndexError:
                     return ''
             
@@ -367,30 +366,54 @@ class Strategy(object):
 
 
 ## Random functions --> New file voor aanmaken?
-    def f_CalcReturn(self, dt_DateOfTheMonth, nad_Price, time='monthly'): # very slow function
-        out=[]
-        # dt_DateOfTheMonth shoudl be in datetime object
+    def f_ToMonthly(self, dt_InputDate, time='monthly'): # very slow function
+        # make first element the input date
+        DateDeltaMonth=[]
+        DateDeltaMonth.append(dt_InputDate)
+        
+            
         if time == 'monthly':
-            for i in range(len(self.dt_object)):
-                out.append( self.f_SubtractMonths(self.dt_object[i],1))
+            
+            # determine how many months in dataset
+            vi_NrMonths = self.f_MonthDelta(self.StockData['DateTime'].iget(0), self.StockData['DateTime'].iget(-1)) # take first and last date
+            for i in range(vi_NrMonths): 
+                DateDeltaMonth.append(self.f_SubtractMonths(dt_InputDate,i+1))
         else:
-            out = 2
-            #            out = f_SubtractMonths(self.dt_Object,1)
-        return out
-            
-            
-            # Returns are calculated by last date of the month/year (e.g., 31/12 - 31/01)
-#            date_pd = pd.to_datetime(date).date
-#            tu = dfm.get_date_range(date[0], date[-1], time, st_day)
-#            first_val = returns[0]
-#            return_pt = np.zeros(len(tu))
-#    
-#            for ind, day in enumerate(tu):
-#                i = dfm.find_nearest_date(date_pd, day, time)[0]
-#                return_pt[ind] = (returns[i] / first_val) - 1
-#                first_val = returns[i]
-#    
-#            return return_pt, tu
+            pass
+        
+        
+        ## Calculate the Returns
+        self.StockDataMonthly = pd.DataFrame({'DateTime':DateDeltaMonth})
+
+        # find pricedate by data lists
+        self.StockDataMonthly['open_price'] = self.StockData['open_price'].loc[self.StockData['DateTime'].isin(self.StockDataMonthly['DateTime'].values)].values
+       
+        # calculate annual volatility
+        self.StockData['AnnualVolatility'] = self.FirstOrderIndicator('Volatility')['Result']
+        self.StockDataMonthly['AnnualVolatility'] = self.StockData['AnnualVolatility'].loc[self.StockData['DateTime'].isin(self.StockDataMonthly['DateTime'].values)].values
+        
+        # Shift one element to get the one month shifted dates
+        self.StockDataMonthly['DateTimeMonthShifted'] =  self.StockDataMonthly['DateTime'].shift(-1)
+        self.StockDataMonthly['open_price_MonthShifted'] = self.StockDataMonthly['open_price'].shift(-1)
+        
+        
+        
+        return []
+    
+    
+    def f_CalcPerformance(self, dt_InputDate, argd_PortfolioAverage):
+        self.f_ToMonthly( dt_InputDate)
+        # calculate monthly performance
+        self.StockDataMonthly['MonthlyPerformance'] = np.log(self.StockDataMonthly['open_price']/self.StockDataMonthly['open_price_MonthShifted'] + 1)
+        
+        # calculate one/three/six month performance
+        self.StockDataMonthly['OneMonthPerformance']    = self.StockDataMonthly['MonthlyPerformance']*argd_PortfolioAverage/self.StockDataMonthly['AnnualVolatility']
+        self.StockDataMonthly['ThreeMonthPerformance']  = talib.SMA(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=3)
+        self.StockDataMonthly['SixMonthPerformance']    = talib.SMA(self.StockDataMonthly['OneMonthPerformance'].values,timeperiod=6)
+        # Deze kloppen niet
+        
+        
+        return []
     
     def f_SubtractMonths(self,sourcedate,months):
         month = sourcedate.month - months - 1
@@ -400,7 +423,7 @@ class Strategy(object):
         
         # find nearest date
         dt_OneMonthAgo = dt(year,month,day)
-        dt_OneMonthAgoCorrected = self.f_FindNearestDate(self.dt_object,dt_OneMonthAgo)
+        dt_OneMonthAgoCorrected = self.f_FindNearestDate(self.StockData['DateTime'],dt_OneMonthAgo)
         
         
         
@@ -410,10 +433,26 @@ class Strategy(object):
         return min(items, key=lambda x: abs(x - pivot))
     
 
+    def f_MonthDelta(self, arg_date1, arg_date2):
+        delta = 0
+        d1 = arg_date1
+        d2 = arg_date2
+        
+        while True:
+            mdays = monthrange(d1.year, d1.month)[1]
+            d1 += timedelta(days=mdays)
+            if d1 <= d2:
+                delta += 1
+            else:
+                break
+        return delta
 
-
-
-
-
-
-
+    def f_CutDates(self, start_date, end_date):
+        if (start_date == 'default') or (start_date < self.StockData['price_date'].iloc[0]):
+            start_date = self.StockData['price_date'].iloc[0]
+        if (end_date == 'default') or (end_date > self.StockData['price_date'].iloc[-1]):
+            end_date = self.StockData['price_date'].iloc[-1]
+    
+        self.StockData = self.StockData.loc[(self.StockData['price_date'] >= start_date) & (self.StockData['price_date'] <= end_date)].copy()
+    
+    
