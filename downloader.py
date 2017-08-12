@@ -88,7 +88,7 @@ class WebsiteData(object):
         df = pd.io.parsers.read_table(StringIO(site_str), sep=',', index_col=False, names=names, header=0)
         return df
 
-    def get_quandl_data(self, ticker, exchange):
+    def get_quandl_data(self, ticker, exchange=None):
         try:
             site_str = 'https://www.quandl.com/api/v1/datasets/WIKI/TICKER.csv?auth_token=y5EKtU94W7v5KsXc9EvN'
             site_str = site_str.replace('TICKER', ticker)
@@ -96,7 +96,9 @@ class WebsiteData(object):
             df = self.get_csv_as_dataframe(site=site_str)
 
         except urllib2.HTTPError:
-            try:
+            try:                   
+                if exchange is None:
+                    raise ValueError("No Stock Exchange given, needed for this source")
                 site_str = \
                     'https://www.quandl.com/api/v1/datasets/GOOG/EXCHANGE_TICKER.csv?auth_token=y5EKtU94W7v5KsXc9EvN'
                 site_str = site_str.replace('TICKER', ticker)
