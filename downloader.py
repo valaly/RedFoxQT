@@ -64,8 +64,9 @@ class WebsiteData(object):
         local_spreadsheet = ''.join([location, '/', name])
 
         # Retrieve the csv as a string
-        response = urllib2.urlopen(site_csvfile)
+        response = urllib2.urlopen(site_csvfile, timeout=1)
         csv = response.read()
+        response.close()
 
         # Save the string to a file
         csvstr = str(csv).strip("b'")

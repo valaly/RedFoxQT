@@ -44,6 +44,17 @@ def f_ReadCsv(vs_Name, vs_Path="", vs_Prefix="", vs_Postfix="", l_Header=None, v
 
     return df_Data    
 
+def f_SaveDFtoCsv(df_ToSave, vs_Name, vs_Path=""):
+    """
+        Description:        saves a dataframe as a csv file
+        Input:
+            df_ToSave       dataframe to be saved as csv file
+            vs_Name         name of the csv file
+            vs_Path         path to where the csv file should be saved
+    """
+    vs_FullPath = ''.join([vs_Path, '/', vs_Name, '.csv'])
+    df_ToSave.to_csv(vs_FullPath, index=False)
+
 
 def f_FindNearestDate(na_DateTime, vs_Date):
     """
